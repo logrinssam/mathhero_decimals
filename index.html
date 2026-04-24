@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>소수의 나눗셈 용사 v1.9.3</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+        :root { --p: #b3e5fc; --s: #ffeb3b; --a: #ff5252; --t: #5d4037; --bg: #f0f9ff; }
+        
+        body { font-family: 'Jua', sans-serif; background: var(--bg); color: var(--t); margin: 0; padding: 0; overflow-x: hidden; }
+        
+        /* 상단 바 */
+        #top-bar { 
+            background: #ffffff; padding: 15px; border-bottom: 5px solid var(--p);
+            display: flex; justify-content: center; align-items: center; gap: 15px;
+            position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        #top-bar input { font-family: 'Jua'; padding: 10px; border: 3px solid var(--p); border-radius: 12px; text-align: center; width: 150px; font-size: 1rem; }
+        .btn-start { background: var(--a); border: none; border-radius: 12px; color: white; padding: 10px 30px; cursor: pointer; font-family: 'Jua'; font-size: 1.2em; box-shadow: 0 4px 0 #d32f2f; }
+
+        /* 게임 컨테이너 */
+        #game-container { display: flex; width: 1260px; max-width: 98%; margin: 20px auto; gap: 20px; transition: all 0.8s ease; }
+        .is-locked { filter: blur(8px) grayscale(80%); pointer-events: none; opacity: 0.4; }
+
+        .panel { background: white; border-radius: 30px; padding: 25px; box-shadow: 0 10px 0 rgba(0,0,0,0.05); border: 6px solid var(--p); position: relative; }
+        .hidden { display: none !important; }
+
+        /* [UI 강화] 제목 및 왼쪽 상태창 글자 크기 */
+        .game-main-title { color: var(--a); font-size: 1.5em; margin-bottom: 5px; text-shadow: 1px 1px 0px #fff; }
+        #status-panel p { font-size: 1.35em; margin: 18px 0; font-weight: bold; color: #444; } 
+        #hero-nickname { font-size: 2.3em; margin: 5px 0; color: #333; }
+
+        /* 애니메이션 효과 */
+        @keyframes floatUp { 0% { opacity: 0; transform: translate(-50%, 0); } 10% { opacity: 1; transform: translate(-50%, -20px); } 100% { opacity: 0; transform: translate(-50%, -60px); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        @keyframes flashRed { 0% { background-color: #ffcdd2; } 100% { background-color: #e8f5e9; } }
+        
+        .floating-hint { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background: white; color: #d32f2f; padding: 10px 20px; border-radius: 20px; border: 3px solid #ffcdd2; font-size: 1.3em; z-index: 100; animation: floatUp 2.5s forwards; box-shadow: 0 4px 10px rgba(0,0,0,0.1); white-space: nowrap; }
+        .monster-hit { animation: shake 0.4s ease-in-out; }
+        .screen-flash { animation: flashRed 0.4s ease-in-out; }
+
+        /* UI 바 및 버튼 */
+        .bar-bg { width: 100%; height: 28px; background: #eee; border-radius: 14px; border: 3px solid #ccc; position: relative; overflow: hidden; }
+        .bar-fill { height: 100%; transition: width 0.4s; background: var(--a); }
+        #problem-banner { background: #fff9c4; padding: 25px; border-radius: 25px; text-align: center; font-size: 4em; margin-bottom: 25px; border: 6px solid #fff176; }
+        #answer-input { font-family: 'Jua'; font-size: 2.3em; padding: 12px; border-radius: 20px; border: 5px solid var(--p); width: 180px; text-align: center; }
+        
+        .action-btn { font-family: 'Jua'; border: none; border-radius: 18px; cursor: pointer; color: white; padding: 12px 25px; transition: 0.2s; }
+        .btn-attack { background: var(--a); font-size: 1.8em; box-shadow: 0 6px 0 #d32f2f; margin-left: 10px; }
+        .btn-nav { width: 100%; margin-top: 12px; font-size: 1.2em; box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
+
+        /* 그리드 레이아웃 */
+        #shop-list, #collection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-height: 480px; overflow-y: auto; padding-right: 5px; }
+        .card { border: 4px solid var(--p); padding: 15px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; background: #fdfdfd; }
+        .tag { font-size: 0.8em; font-weight: bold; padding: 3px 8px; border-radius: 10px; margin-bottom: 5px; display: inline-block; }
+        .tag-w { background: #ffebee; color: #d32f2f; }
+        .tag-a { background: #f3e5f5; color: #7e57c2; }
+        .tag-x { background: #e8f5e9; color: #2e7d32; }
+
+        #combo-badge { position: absolute; top: -15px; right: -15px; background: #ff9800; color: white; padding: 8px 20px; border-radius: 25px; font-size: 1.3em; box-shadow: 0 5px 0 #e65100; transform: rotate(12deg); display: none; z-index: 50; }
+    </style>
+</head>
+<body>
+
+<div id="top-bar">
+    <input type="text" id="school-name" placeholder="학교 (예: 화명초)">
+    <input type="text" id="user-nick" placeholder="닉네임 (예: 멋쟁이용사)">
+    <button class="btn-start" id="start-button" onclick="processLogin()">모험 시작!</button>
+</div>
+
+<div id="game-container" class="is-locked">
+    <div id="status-panel" class="panel" style="flex: 1;">
+        <center>
+            <div class="game-main-title">소수의 나눗셈 용사</div>
+            <h2 id="hero-nickname">닉네임</h2>
+            <div style="background:var(--s); padding:8px 25px; border-radius:25px; margin-top:10px; font-size: 1.2em;">LV. <span id="lv">1</span></div>
+        </center>
+        <hr style="border: 1px dashed var(--p); margin: 20px 0;">
+        <p>❤️ 체력: <span id="hp-text">100/100</span></p>
+        <div class="bar-bg"><div id="hp-bar-fill" class="bar-fill"></div></div>
+        <p>💰 골드: <span id="gold">0</span> G</p>
+        <hr>
+        <p>🗡️ 공격력: <span id="atk-val">10</span></p>
+        <p>👕 콤보보너스: <span id="combo-val">0</span>%</p>
+        <p>💍 보너스시간: <span id="time-val">5</span>초</p>
+        <hr>
+        <button class="action-btn btn-nav" style="background:#ffa726;" onclick="showScreen('shop')">🏪 만물상점</button>
+        <button class="action-btn btn-nav" style="background:#66bb6a;" onclick="showScreen('rank')">🏆 명예의 전당</button>
+        <button class="action-btn btn-nav" style="background:#42a5f5;" onclick="showScreen('collection')">👾 몬스터 도감</button>
+    </div>
+
+    <div id="main-panel" class="panel" style="flex: 2.5;">
+        <div id="combo-badge">0 COMBO!</div>
+        
+        <div id="screen-battle">
+            <div id="monster-area" style="background:#e8f5e9; padding:25px; border-radius:30px; text-align:center; margin-bottom:20px; border: 5px solid #c8e6c9; position: relative;">
+                <div id="m-name" style="font-size: 1.6em; font-weight:bold; color: #2e7d32;">몬스터 대기 중</div>
+                <div class="bar-bg" style="width:80%; margin: 15px auto;"><div id="m-hp-fill" class="bar-fill"></div></div>
+                <div id="m-sprite" style="font-size:7.5em; display:inline-block;">🔒</div>
+            </div>
+            <div id="problem-banner"><span id="p-text">상단에 닉네임을 입력하세요!</span></div>
+            <div style="display:flex; justify-content:center; align-items:center;">
+                <input type="text" id="answer-input" placeholder="정답" autocomplete="off" onkeypress="if(event.keyCode==13) handleAttack()">
+                <button class="action-btn btn-attack" onclick="handleAttack()">공격!</button>
+            </div>
+            <div id="battle-log" style="margin-top:20px; height:90px; overflow-y:auto; border-top:2px solid #eee; padding-top:10px; font-size:1em; color:#888;"></div>
+        </div>
+
+        <div id="screen-shop" class="hidden">
+            <h2 style="text-align:center;">🏪 트리플 만물상점</h2>
+            <div id="shop-list"></div>
+            <button class="action-btn btn-nav" style="background:#78909c;" onclick="showScreen('battle')">🔙 돌아가기</button>
+        </div>
+
+        <div id="screen-rank" class="hidden">
+            <h2 style="text-align:center;">🏆 명예의 전당</h2>
+            <div id="rank-list" style="max-height: 400px; overflow-y: auto;"></div>
+            <button class="action-btn btn-nav" style="background:#78909c;" onclick="showScreen('battle')">🔙 돌아가기</button>
+        </div>
+
+        <div id="screen-collection" class="hidden">
+            <h2 style="text-align:center;">👾 몬스터 도감 (연구 등급)</h2>
+            <div id="collection-grid" style="grid-template-columns: 1fr 1fr 1fr;"></div>
+            <button class="action-btn btn-nav" style="background:#78909c;" onclick="showScreen('battle')">🔙 돌아가기</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, get, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+// [Firebase 설정] - 예린 선생님의 정보로 유지
+const firebaseConfig = {
+    apiKey: "AIzaSyDUADGY2c1Y7BFQQVImgHqX92xjNbdGLXk",
+    authDomain: "division-of-fractions.firebaseapp.com",
+    projectId: "division-of-fractions",
+    databaseURL: "https://division-of-fractions-default-rtdb.asia-southeast1.firebasedatabase.app/",
+    storageBucket: "division-of-fractions.firebasestorage.app",
+    messagingSenderId: "549398586980",
+    appId: "1:549398586980:web:8af75b0d03c87eec39a171"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// [아이템 & 몬스터 데이터]
+const shopItems = [
+    { type: 'w', icon: "🪵", name: "연습용 목검", desc: "시작보다 묵직한 타격감", price: 100, val: 15 },
+    { type: 'w', icon: "🗡️", name: "소수점 단검", desc: "소수점 사이를 파고드는 날카로움", price: 300, val: 25 },
+    { type: 'w', icon: "⚔️", name: "강철 분할도", desc: "몬스터를 정확히 등분하는 칼", price: 800, val: 55 },
+    { type: 'w', icon: "🔱", name: "황금 나눗셈검", desc: "높은 데미지를 자랑하는 부의 상징", price: 1800, val: 110 },
+    { type: 'w', icon: "⚡", name: "진리검: 제로", desc: "나눗셈의 끝을 본 자의 무기", price: 4500, val: 300 },
+    { type: 'a', icon: "👕", name: "질긴 가죽옷", desc: "실수해도 툭툭 털고 일어날 내구성", price: 150, val: 3 },
+    { type: 'a', icon: "🥋", name: "집중의 예복", desc: "연산 집중력을 높여주는 옷", price: 450, val: 7 },
+    { type: 'a', icon: "🛡️", name: "사슬 갑옷", desc: "안정적인 연산을 돕는 갑옷", price: 1000, val: 12 },
+    { type: 'a', icon: "🧥", name: "기사의 판금", desc: "데미지를 폭발시키는 기사의 자존심", price: 2500, val: 22 },
+    { type: 'a', icon: "💎", name: "용사의 성갑", desc: "완벽한 정확도를 가진 용사의 증표", price: 5500, val: 40 },
+    { type: 'x', icon: "⌚", name: "나무 시계", desc: "2초의 여유가 생각보다 큽니다", price: 200, val: 7 },
+    { type: 'x', icon: "💍", name: "은빛 반지", desc: "차분하게 점을 찍을 수 있는 시간", price: 600, val: 9 },
+    { type: 'x', icon: "📿", name: "푸른 보석 목걸이", desc: "느려도 괜찮아요! 신속템", price: 1300, val: 12 },
+    { type: 'x', icon: "🧭", name: "차원의 나침반", desc: "시간이 멈춘 듯한 여유로움", price: 2800, val: 16 },
+    { type: 'x', icon: "⌛", name: "시간의 지배자", desc: "22초 안에만 풀면 무조건 2배!", price: 6500, val: 22 }
+];
+
+const monsterMaster = [
+    { name: "소수점 슬라임", sprite: "💧", desc: "소수점 위치를 연구하세요." },
+    { name: "나눗셈 고스트", sprite: "👻", desc: "몫의 0을 찾는 능력이 필요합니다." },
+    { name: "분할 골렘", sprite: "🗿", desc: "자릿수가 많아도 당황하지 마세요." },
+    { name: "소수 가시", sprite: "🌵", desc: "뾰족한 소수점 처리가 핵심!" }
+];
+
+let gameState = { player: { nickname: "", school: "", lv: 1, hp: 100, maxHp: 100, gold: 0, exp: 0, maxExp: 50, atk: 10, comboRate: 0, bonusTime: 5, curCombo: 0, weapon: "무딘 검", armor: "평상복", acc: "없음", collection: { "소수점 슬라임": 0, "나눗셈 고스트": 0, "분할 골렘": 0, "소수 가시": 0 } } };
+let isLogged = false, curProb = { q: "", a: 0, start: 0 }, curMons = { name: "", sprite: "", hp: 0, maxHp: 0 };
+
+// [핵심 로직 1: 로그인]
+window.processLogin = async function() {
+    const sInput = document.getElementById('school-name');
+    const nInput = document.getElementById('user-nick');
+    let school = sInput.value.trim().replace(/\s+/g, '');
+    let nick = nInput.value.trim();
+
+    if (!school || !nick) { alert("⚠️ 학교와 닉네임을 모두 입력해주세요!"); return; }
+    if (school.endsWith("초")) school += "등학교"; else if (!school.endsWith("초등학교")) school += "초등학교";
+
+    const userID = `${school}-${nick}`;
+    try {
+        const snap = await get(ref(db, 'players/' + userID));
+        if (snap.exists()) {
+            gameState.player = snap.val();
+            if(!gameState.player.collection) gameState.player.collection = { "소수점 슬라임": 0, "나눗셈 고스트": 0, "분할 골렘": 0, "소수 가시": 0 };
+        } else {
+            gameState.player.school = school; gameState.player.nickname = nick;
+        }
+        isLogged = true;
+        document.getElementById('game-container').classList.remove('is-locked');
+        document.getElementById('start-button').innerText = "접속 완료";
+        document.getElementById('start-button').disabled = true;
+        sInput.disabled = true; nInput.disabled = true;
+        updateUI(); spawn(); nextProb();
+    } catch(e) { alert("연결 실패! 규칙 설정을 확인하세요."); }
+};
+
+function save() { if (isLogged) set(ref(db, 'players/' + `${gameState.player.school}-${gameState.player.nickname}`), gameState.player); }
+
+// [핵심 로직 2: 공격]
+window.handleAttack = function() {
+    if (!isLogged) return;
+    const input = document.getElementById('answer-input');
+    const val = parseFloat(input.value.trim());
+    if (isNaN(val)) { input.value = ""; return; }
+
+    const p = gameState.player;
+    const timeSpent = (Date.now() - curProb.start) / 1000;
+    const count = p.collection[curMons.name] || 0;
+
+    if (Math.abs(val - curProb.a) < 0.001) {
+        p.curCombo++;
+        // 도감 연구 보너스 (상향 교체)
+        let bonusAtkMult = (count >= 50) ? 1.2 : (count >= 25 ? 1.1 : 1.0);
+        let baseDmg = Math.floor(p.atk * bonusAtkMult);
+        
+        let timeMult = (timeSpent <= p.bonusTime) ? 2 : 1;
+        if (timeMult === 2) addLog("⚡ 신속 공격! 데미지 2배!");
+
+        let comboMult = 1 + (p.curCombo * (p.comboRate / 100));
+        let finalDmg = Math.floor((baseDmg * timeMult) * comboMult);
+
+        curMons.hp -= finalDmg;
+        document.getElementById('m-sprite').classList.add('monster-hit');
+        setTimeout(() => document.getElementById('m-sprite').classList.remove('monster-hit'), 400);
+        showCombo(p.curCombo);
+        addLog(`🗡️ ${finalDmg} 데미지!`);
+        if (curMons.hp <= 0) win(); else nextProb();
+    } else {
+        p.curCombo = 0; hideCombo(); p.hp -= 15;
+        document.getElementById('monster-area').classList.add('screen-flash');
+        setTimeout(() => document.getElementById('monster-area').classList.remove('screen-flash'), 400);
+        let hint = (p.lv > 10 && val > 1 && curProb.a < 1) ? "몫이 1보다 작아! 0을 앞에 써봐." : "소수점 위치를 확인해봐!";
+        showFloatingHint(hint);
+        addLog(`😭 오답! -15 HP (정답: ${curProb.a})`);
+        if (p.hp <= 0) die(); else nextProb();
+    }
+    input.value = ""; updateUI();
+};
+
+function nextProb() {
+    const lv = gameState.player.lv;
+    let div = Math.floor(Math.random() * 8) + 2;
+    let quo;
+    if (lv <= 5) quo = (Math.floor(Math.random() * 89) + 11) / 10;
+    else if (lv <= 10) quo = (Math.floor(Math.random() * 899) + 101) / 100;
+    else quo = (Math.floor(Math.random() * 9) + 1) / 100;
+    let den = parseFloat((div * quo).toFixed(2));
+    curProb = { q: `${den} ÷ ${div} = ?`, a: quo, start: Date.now() };
+    document.getElementById('p-text').innerText = curProb.q;
+    document.getElementById('answer-input').focus();
+}
+
+function win() {
+    const p = gameState.player;
+    const count = p.collection[curMons.name] || 0;
+    let goldMult = (count >= 50) ? 1.1 : (count >= 10 ? 1.05 : 1.0);
+    let goldGain = Math.floor(50 * goldMult);
+    p.gold += goldGain; p.exp += 20; p.collection[curMons.name] = count + 1;
+    addLog(`✨ 승리! ${goldGain}G 획득.`);
+    if (p.exp >= p.maxExp) { p.lv++; p.exp = 0; p.maxHp += 20; p.hp = p.maxHp; alert(`🎊 레벨 업! 현재 LV.${p.lv}`); }
+    save(); spawn(); nextProb();
+}
+
+// [핵심 로직 3: UI 렌더링]
+window.showScreen = function(name) {
+    if (!isLogged) return;
+    document.getElementById('screen-battle').classList.add('hidden');
+    document.getElementById('screen-shop').classList.add('hidden');
+    document.getElementById('screen-rank').classList.add('hidden');
+    document.getElementById('screen-collection').classList.add('hidden');
+    document.getElementById('screen-' + name).classList.remove('hidden');
+    if (name === 'shop') renderShop();
+    if (name === 'rank') renderRank();
+    if (name === 'collection') renderCollection();
+};
+
+function renderShop() {
+    let h = "";
+    shopItems.forEach(i => {
+        let tClass = i.type === 'w' ? 'tag-w' : (i.type === 'a' ? 'tag-a' : 'tag-x');
+        let tName = i.type === 'w' ? '무기' : (i.type === 'a' ? '방어구' : '장신구');
+        let eff = i.type === 'w' ? `공격력 ${i.val}` : (i.type === 'a' ? `콤보+${i.val}%` : `보너스 ${i.val}초`);
+        h += `<div class="card"><div style="flex:1;"><span class="tag ${tClass}">${tName} ${i.icon}</span><br><b>${i.name}</b><br><small>"${i.desc}"</small><br><b>효과: ${eff}</b></div><button class="action-btn" style="background:#4caf50;" onclick="buyItem('${i.name}')">${i.price}G</button></div>`;
+    });
+    document.getElementById('shop-list').innerHTML = h;
+}
+
+window.buyItem = function(name) {
+    const item = shopItems.find(i => i.name === name);
+    const p = gameState.player;
+    if (p.gold >= item.price) {
+        p.gold -= item.price;
+        if (item.type === 'w') { p.weapon = item.name; p.atk = item.val; }
+        else if (item.type === 'a') { p.armor = item.name; p.comboRate = item.val; }
+        else if (item.type === 'x') { p.acc = item.name; p.bonusTime = item.val; }
+        save(); updateUI(); renderShop(); alert(`${item.name} 장착!`);
+    } else alert("골드가 부족해요!");
+};
+
+function renderCollection() {
+    let h = ""; const p = gameState.player;
+    monsterMaster.forEach(m => {
+        const count = p.collection[m.name] || 0;
+        let rank = "초보 연구원", next = "목표: 10마리 (골드+5%)", color = "#90a4ae";
+        if (count >= 50) { rank = "🏆 마스터"; next = "골드+10%, 공격력+20% 적용"; color = "#f44336"; }
+        else if (count >= 25) { rank = "전문 연구원"; next = "목표: 50마리 (최종 보너스)"; color = "#7e57c2"; }
+        else if (count >= 10) { rank = "숙련 연구원"; next = "목표: 25마리 (공격력+10%)"; color = "#42a5f5"; }
+        h += `<div class="card" style="flex-direction:column; border-color:${color}; text-align:center;"><div style="font-size:3.5em;">${count > 0 ? m.sprite : "❓"}</div><b>${m.name}</b><br><small>${m.desc}</small><div style="color:var(--a); margin-top:5px;">처치: ${count}마리</div><div style="background:#f5f5f5; padding:8px; border-radius:15px; margin-top:10px; font-size:0.8em; width:100%;"><b style="color:${color}">[${rank}]</b><br>${next}</div></div>`;
+    });
+    document.getElementById('collection-grid').innerHTML = h;
+}
+
+async function renderRank() {
+    const q = query(ref(db, 'players'), orderByChild('lv'), limitToLast(15));
+    const snap = await get(q);
+    let list = []; snap.forEach(c => list.push(c.val()));
+    list.sort((a,b) => b.lv - a.lv);
+    let h = list.map((p, i) => `<div class="card"><span>${i+1}등. ${p.school} [${p.nickname}]</span> <b>LV.${p.lv}</b></div>`).join('');
+    document.getElementById('rank-list').innerHTML = h || "<p>데이터 없음</p>";
+}
+
+function spawn() {
+    const m = monsterMaster[Math.floor(Math.random() * monsterMaster.length)];
+    curMons.name = m.name; curMons.sprite = m.sprite;
+    curMons.maxHp = 40 + (gameState.player.lv * 20); curMons.hp = curMons.maxHp;
+    document.getElementById('m-name').innerText = curMons.name;
+    document.getElementById('m-sprite').innerText = curMons.sprite;
+    updateUI();
+}
+
+function updateUI() {
+    const p = gameState.player;
+    document.getElementById('hero-nickname').innerText = p.nickname || "닉네임";
+    document.getElementById('lv').innerText = p.lv; 
+    document.getElementById('gold').innerText = p.gold;
+    document.getElementById('hp-text').innerText = `${Math.max(0, p.hp)}/${p.maxHp}`;
+    document.getElementById('atk-val').innerText = p.atk;
+    document.getElementById('combo-val').innerText = p.comboRate;
+    document.getElementById('time-val').innerText = p.bonusTime;
+    document.getElementById('hp-bar-fill').style.width = (p.hp/p.maxHp*100) + "%";
+    document.getElementById('m-hp-fill').style.width = (curMons.hp/curMons.maxHp*100) + "%";
+}
+
+function showFloatingHint(m) { const area = document.getElementById('monster-area'); const h = document.createElement('div'); h.className = 'floating-hint'; h.innerHTML = `💡 ${m}`; area.appendChild(h); setTimeout(() => h.remove(), 2500); }
+function showCombo(n) { const b = document.getElementById('combo-badge'); if (n > 1) { b.style.display = "block"; b.innerText = `${n} COMBO!`; } }
+function hideCombo() { document.getElementById('combo-badge').style.display = "none"; }
+function die() { alert("쓰러졌습니다!"); gameState.player.hp = 30; save(); showScreen('battle'); updateUI(); }
+function addLog(m) { const l = document.getElementById('battle-log'); l.innerHTML = `<div>> ${m}</div>` + l.innerHTML; }
+</script>
+</body>
+</html>
