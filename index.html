@@ -3,94 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>소수의 나눗셈 용사</title>
+    <title>소수의 나눗셈 용사 v1.9.6</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
         :root { --p: #b3e5fc; --s: #ffeb3b; --a: #ff5252; --t: #5d4037; --bg: #f0f9ff; }
         
+        /* [중요] 모든 요소의 패딩/테두리가 전체 크기를 넘지 않도록 강제 고정 */
+        * { box-sizing: border-box; }
+
         body { font-family: 'Jua', sans-serif; background: var(--bg); color: var(--t); margin: 0; padding: 0; overflow-x: hidden; }
         
         /* 상단 네비게이션 */
         #top-bar { 
-            background: #ffffff; padding: 15px; border-bottom: 5px solid var(--p);
+            background: #ffffff; padding: 10px 15px; border-bottom: 5px solid var(--p);
             display: flex; justify-content: center; align-items: center; gap: 15px;
             position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        #top-bar input { font-family: 'Jua'; padding: 10px; border: 3px solid var(--p); border-radius: 12px; text-align: center; width: 150px; font-size: 1rem; }
-        .btn-start { background: var(--a); border: none; border-radius: 12px; color: white; padding: 10px 30px; cursor: pointer; font-family: 'Jua'; font-size: 1.2em; box-shadow: 0 4px 0 #d32f2f; }
+        #top-bar input { font-family: 'Jua'; padding: 8px; border: 3px solid var(--p); border-radius: 12px; text-align: center; width: 140px; font-size: 1rem; }
+        .btn-start { background: var(--a); border: none; border-radius: 12px; color: white; padding: 8px 25px; cursor: pointer; font-family: 'Jua'; font-size: 1.1em; box-shadow: 0 4px 0 #d32f2f; }
 
-        /* 메인 컨테이너 */
-        #game-container { display: flex; width: 1260px; max-width: 98%; margin: 20px auto; gap: 20px; transition: all 0.8s ease; }
+        /* [화면비 최적화] 고정 픽셀(1260px) 제거, 최대 넓이 1050px로 유연하게 설정 */
+        #game-container { display: flex; width: 100%; max-width: 1050px; margin: 15px auto; padding: 0 15px; gap: 20px; transition: all 0.8s ease; }
         .is-locked { filter: blur(8px) grayscale(80%); pointer-events: none; opacity: 0.4; }
 
-        .panel { background: white; border-radius: 30px; padding: 25px; box-shadow: 0 10px 0 rgba(0,0,0,0.05); border: 6px solid var(--p); position: relative; }
+        .panel { background: white; border-radius: 25px; padding: 20px; box-shadow: 0 10px 0 rgba(0,0,0,0.05); border: 6px solid var(--p); position: relative; }
         .hidden { display: none !important; }
 
-        /* [UI 강화] 제목 및 능력치 텍스트 크기 상향 */
-        .game-main-title { color: var(--a); font-size: 1.6em; margin-bottom: 5px; text-shadow: 1px 1px 0px #fff; font-weight: bold; }
-        #status-panel p { font-size: 1.4em; margin: 18px 0; font-weight: bold; color: #444; } 
-        #hero-nickname { font-size: 2.4em; margin: 5px 0; color: #333; }
+        /* 텍스트 및 UI 크기 최적화 (넘치지 않게 조절) */
+        .game-main-title { color: var(--a); font-size: 1.5em; margin-bottom: 5px; text-shadow: 1px 1px 0px #fff; font-weight: bold; }
+        #status-panel p { font-size: 1.25em; margin: 15px 0; font-weight: bold; color: #444; } 
+        #hero-nickname { font-size: 2.2em; margin: 5px 0; color: #333; }
 
         /* 애니메이션 */
         @keyframes floatUp { 0% { opacity: 0; transform: translate(-50%, 0); } 10% { opacity: 1; transform: translate(-50%, -20px); } 100% { opacity: 0; transform: translate(-50%, -60px); } }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         @keyframes flashRed { 0% { background-color: #ffcdd2; } 100% { background-color: #e8f5e9; } }
         
-        .floating-hint { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background: white; color: #d32f2f; padding: 10px 20px; border-radius: 20px; border: 3px solid #ffcdd2; font-size: 1.3em; z-index: 100; animation: floatUp 2.5s forwards; box-shadow: 0 4px 10px rgba(0,0,0,0.1); white-space: nowrap; }
+        .floating-hint { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background: white; color: #d32f2f; padding: 10px 20px; border-radius: 20px; border: 3px solid #ffcdd2; font-size: 1.2em; z-index: 100; animation: floatUp 2.5s forwards; box-shadow: 0 4px 10px rgba(0,0,0,0.1); white-space: nowrap; }
         .monster-hit { animation: shake 0.4s ease-in-out; }
         .screen-flash { animation: flashRed 0.4s ease-in-out; }
 
-        /* 체력바 및 버튼 */
-        .bar-bg { width: 100%; height: 30px; background: #eee; border-radius: 15px; border: 3px solid #ccc; position: relative; overflow: hidden; }
+        /* 체력바 및 전투 UI 크기 슬림화 */
+        .bar-bg { width: 100%; height: 26px; background: #eee; border-radius: 13px; border: 3px solid #ccc; position: relative; overflow: hidden; }
         .bar-fill { height: 100%; transition: width 0.4s; background: var(--a); }
-        #problem-banner { background: #fff9c4; padding: 25px; border-radius: 25px; text-align: center; font-size: 4.5em; margin-bottom: 25px; border: 6px solid #fff176; }
-        #answer-input { font-family: 'Jua'; font-size: 2.4em; padding: 12px; border-radius: 20px; border: 5px solid var(--p); width: 180px; text-align: center; }
         
-        .action-btn { font-family: 'Jua'; border: none; border-radius: 18px; cursor: pointer; color: white; padding: 12px 25px; transition: 0.2s; }
-        .btn-attack { background: var(--a); font-size: 1.8em; box-shadow: 0 6px 0 #d32f2f; margin-left: 10px; }
-        .btn-nav { width: 100%; margin-top: 12px; font-size: 1.3em; box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
+        #monster-area { padding: 20px; border-radius: 25px; text-align: center; margin-bottom: 15px; border: 5px solid #c8e6c9; background: #e8f5e9; position: relative; }
+        #m-sprite { font-size: 6.5em; display: inline-block; margin: 10px 0; } /* 몬스터 크기 다이어트 */
+        
+        #problem-banner { background: #fff9c4; padding: 20px; border-radius: 20px; text-align: center; font-size: 3.5em; margin-bottom: 20px; border: 5px solid #fff176; }
+        #answer-input { font-family: 'Jua'; font-size: 2em; padding: 10px; border-radius: 15px; border: 4px solid var(--p); width: 160px; text-align: center; }
+        
+        .action-btn { font-family: 'Jua'; border: none; border-radius: 15px; cursor: pointer; color: white; padding: 10px 20px; transition: 0.2s; }
+        .btn-attack { background: var(--a); font-size: 1.6em; box-shadow: 0 5px 0 #d32f2f; margin-left: 10px; }
+        .btn-nav { width: 100%; margin-top: 10px; font-size: 1.2em; box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
 
         /* 그리드 및 카드 스타일 */
-        #shop-list, #collection-grid, #rank-list { display: grid; grid-template-columns: 1fr; gap: 15px; max-height: 500px; overflow-y: auto; padding-right: 10px; }
+        #shop-list, #collection-grid, #rank-list { display: grid; grid-template-columns: 1fr; gap: 12px; max-height: 450px; overflow-y: auto; padding-right: 8px; }
         #collection-grid { grid-template-columns: 1fr 1fr; }
-        .card { border: 4px solid var(--p); padding: 18px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; background: #fdfdfd; font-size: 1.2em; }
+        .card { border: 3px solid var(--p); padding: 15px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; background: #fdfdfd; font-size: 1.1em; }
         .tag { font-size: 0.8em; font-weight: bold; padding: 3px 8px; border-radius: 10px; margin-bottom: 5px; display: inline-block; }
         .tag-w { background: #ffebee; color: #d32f2f; }
         .tag-a { background: #f3e5f5; color: #7e57c2; }
         .tag-x { background: #e8f5e9; color: #2e7d32; }
 
-        #combo-badge { position: absolute; top: -15px; right: -15px; background: #ff9800; color: white; padding: 8px 20px; border-radius: 25px; font-size: 1.4em; box-shadow: 0 5px 0 #e65100; transform: rotate(12deg); display: none; z-index: 50; }
+        #combo-badge { position: absolute; top: -10px; right: -10px; background: #ff9800; color: white; padding: 6px 15px; border-radius: 20px; font-size: 1.2em; box-shadow: 0 4px 0 #e65100; transform: rotate(12deg); display: none; z-index: 50; }
 
         /* =========================================
-           📱 [모바일 반응형 최적화 코드] 스마트폰 화면용
+           📱 [모바일 스마트폰 화면용]
            ========================================= */
         @media screen and (max-width: 768px) {
-            /* 상단 바 가로 스크롤 방지 및 줄바꿈 */
             #top-bar { flex-wrap: wrap; padding: 10px; gap: 8px; }
             #top-bar input { width: 40%; font-size: 0.9em; padding: 8px; }
             .btn-start { width: 90%; font-size: 1.1em; padding: 10px; margin-top: 5px; }
 
-            /* 게임 컨테이너를 가로(row)에서 세로(column)로 변경 */
-            #game-container { flex-direction: column; width: 100%; margin: 10px auto; gap: 15px; }
+            #game-container { flex-direction: column; width: 100%; padding: 0 10px; gap: 15px; }
             .panel { padding: 15px; border-width: 4px; border-radius: 20px; }
 
-            /* 폰트 및 UI 크기 스마트폰에 맞게 축소 */
             .game-main-title { font-size: 1.3em; }
             #hero-nickname { font-size: 1.8em; }
-            #status-panel p { font-size: 1.1em; margin: 12px 0; }
+            #status-panel p { font-size: 1.1em; margin: 10px 0; }
             .bar-bg { height: 22px; }
             
             #monster-area { padding: 15px; border-width: 3px; }
-            #m-sprite { font-size: 5em; } /* 몬스터 크기 축소 */
+            #m-sprite { font-size: 5em; } 
             #problem-banner { font-size: 2.8em; padding: 15px; margin-bottom: 15px; border-width: 4px; }
             
-            #answer-input { font-size: 1.8em; width: 130px; padding: 8px; }
-            .btn-attack { font-size: 1.4em; padding: 10px 20px; }
+            #answer-input { font-size: 1.6em; width: 120px; padding: 8px; }
+            .btn-attack { font-size: 1.4em; padding: 8px 15px; }
 
-            /* 도감과 상점을 모바일에서는 1줄(1fr)로 통일하여 깨짐 방지 */
             #collection-grid { grid-template-columns: 1fr; }
-            .card { flex-direction: column; text-align: center; gap: 10px; font-size: 1em; padding: 15px; }
-            .card button { width: 100%; } /* 모바일에서는 구매 버튼을 꽉 차게 */
+            .card { flex-direction: column; text-align: center; gap: 10px; font-size: 1em; padding: 12px; }
+            .card button { width: 100%; }
             
             #shop-list, #collection-grid, #rank-list { max-height: 400px; }
         }
@@ -125,37 +128,37 @@
         <button class="action-btn btn-nav" style="background:#42a5f5;" onclick="showScreen('collection')">👾 몬스터 도감</button>
     </div>
 
-    <div id="main-panel" class="panel" style="flex: 2.5;">
+    <div id="main-panel" class="panel" style="flex: 2.2;">
         <div id="combo-badge">0 COMBO!</div>
         
         <div id="screen-battle">
-            <div id="monster-area" style="background:#e8f5e9; padding:25px; border-radius:30px; text-align:center; margin-bottom:20px; border: 5px solid #c8e6c9; position: relative;">
-                <div id="m-name" style="font-size: 1.8em; font-weight:bold; color: #2e7d32;">몬스터 대기 중</div>
-                <div class="bar-bg" style="width:80%; margin: 15px auto;"><div id="m-hp-fill" class="bar-fill"></div></div>
-                <div id="m-sprite" style="font-size:8em; display:inline-block;">🔒</div>
+            <div id="monster-area">
+                <div id="m-name" style="font-size: 1.6em; font-weight:bold; color: #2e7d32;">몬스터 대기 중</div>
+                <div class="bar-bg" style="width:80%; margin: 10px auto;"><div id="m-hp-fill" class="bar-fill"></div></div>
+                <div id="m-sprite">🔒</div>
             </div>
             <div id="problem-banner"><span id="p-text">로그인 해주세요!</span></div>
             <div style="display:flex; justify-content:center; align-items:center;">
                 <input type="text" id="answer-input" placeholder="정답" autocomplete="off" onkeypress="if(event.keyCode==13) handleAttack()">
                 <button class="action-btn btn-attack" onclick="handleAttack()">공격!</button>
             </div>
-            <div id="battle-log" style="margin-top:20px; height:90px; overflow-y:auto; border-top:2px solid #eee; padding-top:10px; font-size:1em; color:#888;"></div>
+            <div id="battle-log" style="margin-top:20px; height:80px; overflow-y:auto; border-top:2px solid #eee; padding-top:10px; font-size:0.95em; color:#888;"></div>
         </div>
 
         <div id="screen-shop" class="hidden">
-            <h2 style="text-align:center;">🏪 트리플 만물상점</h2>
+            <h2 style="text-align:center; margin-top:0;">🏪 트리플 만물상점</h2>
             <div id="shop-list"></div>
             <button class="action-btn btn-nav" style="background:#78909c;" onclick="showScreen('battle')">🔙 돌아가기</button>
         </div>
 
         <div id="screen-rank" class="hidden">
-            <h2 style="text-align:center;">🏆 명예의 전당 (TOP 15)</h2>
+            <h2 style="text-align:center; margin-top:0;">🏆 명예의 전당 (TOP 15)</h2>
             <div id="rank-list"></div>
             <button class="action-btn btn-nav" style="background:#78909c;" onclick="showScreen('battle')">🔙 돌아가기</button>
         </div>
 
         <div id="screen-collection" class="hidden">
-            <h2 style="text-align:center;">👾 몬스터 연구 도감</h2>
+            <h2 style="text-align:center; margin-top:0;">👾 몬스터 연구 도감</h2>
             <div id="collection-grid"></div>
             <button class="action-btn btn-nav" style="background:#78909c;" onclick="showScreen('battle')">🔙 돌아가기</button>
         </div>
@@ -342,8 +345,8 @@ async function renderRank() {
         
         let h = list.map((p, i) => `
             <div class="card" style="margin-bottom:10px;">
-                <span style="font-size:1.3em;">${i + 1}등. ${p.school} [${p.nickname}]</span> 
-                <b style="color:var(--a); font-size:1.4em;">LV.${p.lv}</b>
+                <span style="font-size:1.2em;">${i + 1}등. ${p.school} [${p.nickname}]</span> 
+                <b style="color:var(--a); font-size:1.3em;">LV.${p.lv}</b>
             </div>
         `).join('');
         document.getElementById('rank-list').innerHTML = h || "<p>아직 등록된 용사가 없습니다.</p>";
