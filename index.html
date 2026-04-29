@@ -6,16 +6,19 @@
     <title>소수의 나눗셈 용사</title>
     
     <meta property="og:title" content="⚔️ 소수의 나눗셈 용사">
-    <meta property="og:description" content="나눗셈 몬스터를 물리치고 우리 학교를 전국 1등으로 만들어보세요!">
+    <meta property="og:description" content="소수의 나눗셈 몬스터를 물리치고 우리 학교를 전국 1등으로 만들어보세요!">
     <meta property="og:image" content="https://logrinssam.github.io/mathhero_decimals/thumbnail.png">
     <meta property="og:url" content="https://logrinssam.github.io/mathhero_decimals/">
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
         :root { --p: #b3e5fc; --s: #ffeb3b; --a: #ff5252; --t: #5d4037; --bg: #f0f9ff; }
+        
         * { box-sizing: border-box; }
+
         body { font-family: 'Jua', sans-serif; background: var(--bg); color: var(--t); margin: 0; padding: 0; overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh; }
         
+        /* 상단 네비게이션 */
         #top-bar { 
             background: #ffffff; padding: 10px 15px; border-bottom: 5px solid var(--p);
             display: flex; justify-content: center; align-items: center; gap: 15px;
@@ -26,6 +29,7 @@
 
         #game-container { display: flex; width: 100%; max-width: 1050px; margin: 15px auto; padding: 0 15px; gap: 20px; transition: all 0.8s ease; flex: 1; }
         .is-locked { filter: blur(8px) grayscale(80%); pointer-events: none; opacity: 0.4; }
+
         .panel { background: white; border-radius: 25px; padding: 20px; box-shadow: 0 10px 0 rgba(0,0,0,0.05); border: 6px solid var(--p); position: relative; }
         .hidden { display: none !important; }
 
@@ -35,11 +39,21 @@
 
         #footer { text-align: center; padding: 15px; font-size: 0.85em; color: #999; letter-spacing: 1px; }
 
-        /* 체력바 및 전투 UI */
+        /* [복구] 애니메이션 이펙트 */
+        @keyframes floatUp { 0% { opacity: 0; transform: translate(-50%, 0); } 10% { opacity: 1; transform: translate(-50%, -20px); } 100% { opacity: 0; transform: translate(-50%, -60px); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        @keyframes flashRed { 0% { background-color: #ffcdd2; } 100% { background-color: #e8f5e9; } }
+        
+        .floating-hint { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background: white; color: #d32f2f; padding: 10px 20px; border-radius: 20px; border: 3px solid #ffcdd2; font-size: 1.2em; z-index: 100; animation: floatUp 2.5s forwards; box-shadow: 0 4px 10px rgba(0,0,0,0.1); white-space: nowrap; }
+        .monster-hit { animation: shake 0.4s ease-in-out; }
+        .screen-flash { animation: flashRed 0.4s ease-in-out; }
+
         .bar-bg { width: 100%; height: 26px; background: #eee; border-radius: 13px; border: 3px solid #ccc; position: relative; overflow: hidden; }
         .bar-fill { height: 100%; transition: width 0.4s; background: var(--a); }
+        
         #monster-area { padding: 20px; border-radius: 25px; text-align: center; margin-bottom: 15px; border: 5px solid #c8e6c9; background: #e8f5e9; position: relative; }
         #m-sprite { font-size: 6.5em; display: inline-block; margin: 10px 0; } 
+        
         #problem-banner { background: #fff9c4; padding: 20px; border-radius: 20px; text-align: center; font-size: 3.5em; margin-bottom: 20px; border: 5px solid #fff176; }
         #answer-input { font-family: 'Jua'; font-size: 2em; padding: 10px; border-radius: 15px; border: 4px solid var(--p); width: 160px; text-align: center; }
         
@@ -47,18 +61,38 @@
         .btn-attack { background: var(--a); font-size: 1.6em; box-shadow: 0 5px 0 #d32f2f; margin-left: 10px; }
         .btn-nav { width: 100%; margin-top: 10px; font-size: 1.2em; box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
 
-        /* 랭킹 탭 스타일 */
+        /* [신규] 랭킹 탭 스타일 */
         .rank-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
-        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 12px; font-family: 'Jua'; cursor: pointer; background: #eee; }
-        .tab-btn.active { background: var(--p); color: #1565c0; font-weight: bold; }
+        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 12px; font-family: 'Jua'; cursor: pointer; background: #eee; font-size: 1.1em; transition: 0.2s; }
+        .tab-btn.active { background: var(--p); color: #1565c0; font-weight: bold; border: 2px solid #64b5f6; }
 
-        #rank-list, #school-rank-list { display: grid; grid-template-columns: 1fr; gap: 12px; max-height: 400px; overflow-y: auto; padding-right: 8px; }
+        /* 그리드 및 카드 스타일 */
+        #shop-list, #collection-grid, #rank-list, #school-rank-list { display: grid; grid-template-columns: 1fr; gap: 12px; max-height: 450px; overflow-y: auto; padding-right: 8px; }
+        #collection-grid { grid-template-columns: 1fr 1fr; }
         .card { border: 3px solid var(--p); padding: 15px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; background: #fdfdfd; font-size: 1.1em; }
+        .tag { font-size: 0.8em; font-weight: bold; padding: 3px 8px; border-radius: 10px; margin-bottom: 5px; display: inline-block; }
+        .tag-w { background: #ffebee; color: #d32f2f; }
+        .tag-a { background: #f3e5f5; color: #7e57c2; }
+        .tag-x { background: #e8f5e9; color: #2e7d32; }
+
+        #combo-badge { position: absolute; top: -10px; right: -10px; background: #ff9800; color: white; padding: 6px 15px; border-radius: 20px; font-size: 1.2em; box-shadow: 0 4px 0 #e65100; transform: rotate(12deg); display: none; z-index: 50; }
 
         @media screen and (max-width: 768px) {
-            #game-container { flex-direction: column; width: 100%; padding: 0 10px; }
+            #top-bar { flex-wrap: wrap; padding: 10px; gap: 8px; }
+            #top-bar input { width: 40%; font-size: 0.9em; padding: 8px; }
+            .btn-start { width: 90%; font-size: 1.1em; padding: 10px; margin-top: 5px; }
+            #game-container { flex-direction: column; width: 100%; padding: 0 10px; gap: 15px; }
+            .panel { padding: 15px; border-width: 4px; border-radius: 20px; }
+            .game-main-title { font-size: 1.3em; }
+            #hero-nickname { font-size: 1.8em; }
+            #status-panel p { font-size: 1.1em; margin: 10px 0; }
             #m-sprite { font-size: 5em; } 
-            #problem-banner { font-size: 2.8em; }
+            #problem-banner { font-size: 2.8em; padding: 15px; margin-bottom: 15px; }
+            #answer-input { font-size: 1.6em; width: 120px; }
+            .btn-attack { font-size: 1.4em; }
+            #collection-grid { grid-template-columns: 1fr; }
+            .card { flex-direction: column; text-align: center; gap: 10px; }
+            .card button { width: 100%; }
         }
     </style>
 </head>
@@ -92,6 +126,8 @@
     </div>
 
     <div id="main-panel" class="panel" style="flex: 2.2;">
+        <div id="combo-badge">0 COMBO!</div>
+        
         <div id="screen-battle">
             <div id="monster-area">
                 <div id="m-name" style="font-size: 1.6em; font-weight:bold; color: #2e7d32;">몬스터 대기 중</div>
@@ -106,20 +142,20 @@
             <div id="battle-log" style="margin-top:20px; height:80px; overflow-y:auto; border-top:2px solid #eee; padding-top:10px; font-size:0.95em; color:#888;"></div>
         </div>
 
-        <div id="screen-rank" class="hidden">
-            <h2 style="text-align:center; margin-top:0;">🏆 전국 용사 명예의 전당</h2>
-            <div class="rank-tabs">
-                <button class="tab-btn active" id="tab-personal" onclick="switchRankTab('personal')">👤 개인 TOP 10</button>
-                <button class="tab-btn" id="tab-school" onclick="switchRankTab('school')">🏫 학교 랭킹</button>
-            </div>
-            <div id="rank-list"></div>
-            <div id="school-rank-list" class="hidden"></div>
-            <button class="action-btn btn-nav" style="background:#78909c;" onclick="showScreen('battle')">🔙 돌아가기</button>
-        </div>
-
         <div id="screen-shop" class="hidden">
             <h2 style="text-align:center; margin-top:0;">🏪 트리플 만물상점</h2>
             <div id="shop-list"></div>
+            <button class="action-btn btn-nav" style="background:#78909c;" onclick="showScreen('battle')">🔙 돌아가기</button>
+        </div>
+
+        <div id="screen-rank" class="hidden">
+            <h2 style="text-align:center; margin-top:0;">🏆 전국 용사 순위 🏆</h2>
+            <div class="rank-tabs">
+                <button class="tab-btn active" id="tab-personal" onclick="switchRankTab('personal')">👤 개인 TOP 10</button>
+                <button class="tab-btn" id="tab-school" onclick="switchRankTab('school')">🏫 학교 연합 랭킹</button>
+            </div>
+            <div id="rank-list"></div>
+            <div id="school-rank-list" class="hidden"></div>
             <button class="action-btn btn-nav" style="background:#78909c;" onclick="showScreen('battle')">🔙 돌아가기</button>
         </div>
 
@@ -150,6 +186,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+// [복구] 상세한 상점 아이템 정보
 const shopItems = [
     { type: 'w', icon: "🪵", name: "연습용 목검", desc: "시작보다 묵직한 타격감", price: 100, val: 15 },
     { type: 'w', icon: "🗡️", name: "소수점 단검", desc: "소수점 사이를 파고드는 날카로움", price: 300, val: 25 },
@@ -175,7 +212,7 @@ const monsterMaster = [
     { name: "소수 가시", sprite: "🌵", desc: "뾰족한 소수점 처리가 핵심!" }
 ];
 
-let gameState = { player: { nickname: "", school: "", lv: 1, hp: 100, maxHp: 100, gold: 0, exp: 0, maxExp: 50, atk: 10, comboRate: 0, bonusTime: 5, curCombo: 0, collection: { "소수점 슬라임": 0, "나눗셈 고스트": 0, "분할 골렘": 0, "소수 가시": 0 } } };
+let gameState = { player: { nickname: "", school: "", lv: 1, hp: 100, maxHp: 100, gold: 0, exp: 0, maxExp: 50, atk: 10, comboRate: 0, bonusTime: 5, curCombo: 0, weapon: "무딘 검", armor: "평상복", acc: "없음", collection: { "소수점 슬라임": 0, "나눗셈 고스트": 0, "분할 골렘": 0, "소수 가시": 0 } } };
 let isLogged = false, curProb = { q: "", a: 0, start: 0 }, curMons = { name: "", sprite: "", hp: 0, maxHp: 0 };
 
 window.processLogin = async function() {
@@ -191,8 +228,10 @@ window.processLogin = async function() {
         if (snap.exists()) {
             gameState.player = snap.val();
             if(!gameState.player.collection) gameState.player.collection = { "소수점 슬라임": 0, "나눗셈 고스트": 0, "분할 골렘": 0, "소수 가시": 0 };
+            alert(`✅ 반갑습니다, ${gameState.player.nickname} 용사님!\n기록을 불러왔습니다.`);
         } else {
             gameState.player.school = school; gameState.player.nickname = nick;
+            alert("✨ 새로운 모험의 시작을 환영합니다!");
         }
         isLogged = true;
         document.getElementById('game-container').classList.remove('is-locked');
@@ -200,39 +239,157 @@ window.processLogin = async function() {
         document.getElementById('start-button').disabled = true;
         sInput.disabled = true; nInput.disabled = true;
         updateUI(); spawn(); nextProb();
-    } catch(e) { alert("연결 실패!"); }
+    } catch(e) { alert("연결 실패! 인터넷 환경을 확인하세요."); }
 };
 
-// [순한맛 밸런스 패치 적용]
+function save() { if (isLogged) set(ref(db, 'players/' + `${gameState.player.school}-${gameState.player.nickname}`), gameState.player); }
+
+// [복구] 흔들림, 빨간불, 콤보 표시 등 이펙트 완벽 복구
+window.handleAttack = function() {
+    if (!isLogged) return;
+    const input = document.getElementById('answer-input');
+    const val = parseFloat(input.value.trim());
+    if (isNaN(val)) { input.value = ""; return; }
+    
+    const p = gameState.player;
+    const timeSpent = (Date.now() - curProb.start) / 1000;
+    const count = p.collection[curMons.name] || 0;
+
+    if (Math.abs(val - curProb.a) < 0.001) {
+        p.curCombo++;
+        let bonusAtkMult = (count >= 50) ? 1.2 : (count >= 25 ? 1.1 : 1.0);
+        let baseDmg = Math.floor(p.atk * bonusAtkMult);
+        let timeMult = (timeSpent <= p.bonusTime) ? 2 : 1;
+        if (timeMult === 2) addLog("⚡ 신속 공격! 데미지 2배!");
+        
+        let comboMult = 1 + (p.curCombo * (p.comboRate / 100));
+        let finalDmg = Math.floor((baseDmg * timeMult) * comboMult);
+        
+        curMons.hp -= finalDmg;
+        document.getElementById('m-sprite').classList.add('monster-hit');
+        setTimeout(() => document.getElementById('m-sprite').classList.remove('monster-hit'), 400);
+        
+        showCombo(p.curCombo);
+        addLog(`🗡️ ${finalDmg} 데미지!`);
+        if (curMons.hp <= 0) win(); else nextProb();
+    } else {
+        p.curCombo = 0; hideCombo(); p.hp -= 15;
+        document.getElementById('monster-area').classList.add('screen-flash');
+        setTimeout(() => document.getElementById('monster-area').classList.remove('screen-flash'), 400);
+        
+        let hint = (p.lv > 10 && val > 1 && curProb.a < 1) ? "몫이 1보다 작아! 0을 앞에 써봐." : "소수점 위치를 확인해봐!";
+        showFloatingHint(hint);
+        
+        addLog(`😭 오답! -15 HP (정답: ${curProb.a})`);
+        if (p.hp <= 0) die(); else nextProb();
+    }
+    input.value = ""; updateUI();
+};
+
+function nextProb() {
+    const lv = gameState.player.lv;
+    let div = Math.floor(Math.random() * 8) + 2;
+    let quo;
+    if (lv <= 5) quo = (Math.floor(Math.random() * 89) + 11) / 10;
+    else if (lv <= 10) quo = (Math.floor(Math.random() * 899) + 101) / 100;
+    else quo = (Math.floor(Math.random() * 9) + 1) / 100;
+    let den = parseFloat((div * quo).toFixed(2));
+    curProb = { q: `${den} ÷ ${div} = ?`, a: quo, start: Date.now() };
+    document.getElementById('p-text').innerText = curProb.q;
+    document.getElementById('answer-input').focus();
+}
+
+// [순한맛 밸런스 + 골드 보너스 복구]
 function win() {
     const p = gameState.player;
     const count = p.collection[curMons.name] || 0;
-    p.gold += 50; p.exp += 20; p.collection[curMons.name] = count + 1;
-    addLog(`✨ 승리! 50G 획득.`);
+    let goldMult = (count >= 50) ? 1.1 : (count >= 10 ? 1.05 : 1.0);
+    let goldGain = Math.floor(50 * goldMult);
+    
+    p.gold += goldGain; 
+    p.exp += 20; 
+    p.collection[curMons.name] = count + 1;
+    addLog(`✨ 승리! ${goldGain}G 획득.`);
+
     let currentNeedExp = 50 + (p.lv * 5); 
     if (p.maxExp < currentNeedExp) p.maxExp = currentNeedExp;
+
     if (p.exp >= p.maxExp) { 
-        p.lv++; p.exp = 0; p.maxExp = 50 + (p.lv * 5); 
-        p.maxHp += 20; p.hp = p.maxHp; 
+        p.lv++; 
+        p.exp = 0; 
+        p.maxExp = 50 + (p.lv * 5); 
+        p.maxHp += 20; 
+        p.hp = p.maxHp; 
         alert(`🎊 레벨 업! 현재 LV.${p.lv}`);
+        save();
+    } else {
+        save(); 
     }
-    set(ref(db, 'players/' + `${p.school}-${p.nickname}`), p);
     spawn(); nextProb();
 }
 
+// [순한맛 몬스터 체력 패치]
 function spawn() {
     const m = monsterMaster[Math.floor(Math.random() * monsterMaster.length)];
     curMons.name = m.name; curMons.sprite = m.sprite;
+    
     const lv = gameState.player.lv;
-    // 몬스터 체력 순한맛 보정 (레벨 400일 때 약 4.8만)
     curMons.maxHp = 50 + (lv * 40) + Math.floor(lv * lv * 0.2); 
     curMons.hp = curMons.maxHp;
+    
     document.getElementById('m-name').innerText = curMons.name;
     document.getElementById('m-sprite').innerText = curMons.sprite;
     updateUI();
 }
 
-// [전국 학교 랭킹 전광판 로직]
+// [복구] 상세한 상점 렌더링
+function renderShop() {
+    let h = "";
+    shopItems.forEach(i => {
+        let tClass = i.type === 'w' ? 'tag-w' : (i.type === 'a' ? 'tag-a' : 'tag-x');
+        let tName = i.type === 'w' ? '무기' : (i.type === 'a' ? '방어구' : '장신구');
+        let eff = i.type === 'w' ? `공격력 ${i.val}` : (i.type === 'a' ? `콤보+${i.val}%` : `보너스 ${i.val}초`);
+        h += `<div class="card"><div style="flex:1;"><span class="tag ${tClass}">${tName} ${i.icon}</span><br><b>${i.name}</b><br><small>"${i.desc}"</small><br><b>효과: ${eff}</b></div><button class="action-btn" style="background:#4caf50;" onclick="buyItem('${i.name}')">${i.price}G</button></div>`;
+    });
+    document.getElementById('shop-list').innerHTML = h;
+}
+
+window.buyItem = function(name) {
+    const item = shopItems.find(i => i.name === name);
+    const p = gameState.player;
+    if (p.gold >= item.price) {
+        p.gold -= item.price;
+        if (item.type === 'w') { p.weapon = item.name; p.atk = item.val; }
+        else if (item.type === 'a') { p.armor = item.name; p.comboRate = item.val; }
+        else if (item.type === 'x') { p.acc = item.name; p.bonusTime = item.val; }
+        save(); updateUI(); renderShop(); alert(`${item.name} 장착 완료!`);
+    } else alert("골드가 부족해요!");
+};
+
+// [복구] 상세한 도감 렌더링
+function renderCollection() {
+    let h = ""; const p = gameState.player;
+    monsterMaster.forEach(m => {
+        const count = p.collection[m.name] || 0;
+        let rank = "초보 연구원", next = "목표: 10마리 (골드+5%)", color = "#90a4ae";
+        if (count >= 50) { rank = "🏆 마스터"; next = "골드+10%, 공격력+20% 적용"; color = "#f44336"; }
+        else if (count >= 25) { rank = "전문 연구원"; next = "목표: 50마리 (최종 보너스)"; color = "#7e57c2"; }
+        else if (count >= 10) { rank = "숙련 연구원"; next = "목표: 25마리 (공격력+10%)"; color = "#42a5f5"; }
+        h += `<div class="card" style="flex-direction:column; border-color:${color}; text-align:center;"><div style="font-size:3.5em;">${count > 0 ? m.sprite : "❓"}</div><b>${m.name}</b><br><small>${m.desc}</small><div style="color:var(--a); margin-top:5px;">처치: ${count}마리</div><div style="background:#f5f5f5; padding:8px; border-radius:15px; margin-top:10px; font-size:0.8em; width:100%;"><b style="color:${color}">[${rank}]</b><br>${next}</div></div>`;
+    });
+    document.getElementById('collection-grid').innerHTML = h;
+}
+
+// 화면 전환 및 랭킹 탭 로직
+window.showScreen = function(name) {
+    if (!isLogged) return;
+    document.querySelectorAll('.panel > div').forEach(el => { if(el.id.startsWith('screen-')) el.classList.add('hidden'); });
+    document.getElementById('screen-' + name).classList.remove('hidden');
+    if (name === 'rank') switchRankTab('personal');
+    if (name === 'shop') renderShop();
+    if (name === 'collection') renderCollection();
+};
+
 window.switchRankTab = function(type) {
     document.getElementById('tab-personal').classList.toggle('active', type === 'personal');
     document.getElementById('tab-school').classList.toggle('active', type === 'school');
@@ -240,6 +397,18 @@ window.switchRankTab = function(type) {
     document.getElementById('school-rank-list').classList.toggle('hidden', type !== 'school');
     if (type === 'personal') renderRank(); else renderSchoolRank();
 };
+
+async function renderRank() {
+    const listEl = document.getElementById('rank-list');
+    listEl.innerHTML = "<p>개인 랭킹 로딩 중...</p>";
+    try {
+        const q = query(ref(db, 'players'), orderByChild('lv'), limitToLast(10));
+        const snap = await get(q);
+        let list = []; snap.forEach(c => list.push(c.val()));
+        list.sort((a, b) => b.lv - a.lv);
+        listEl.innerHTML = list.map((p, i) => `<div class="card"><span>${i+1}등. ${p.school} [${p.nickname}]</span><b style="color:var(--a);">LV.${p.lv}</b></div>`).join('');
+    } catch(e) { listEl.innerHTML = "<p>랭킹을 불러오는데 실패했습니다.</p>"; }
+}
 
 async function renderSchoolRank() {
     const listEl = document.getElementById('school-rank-list');
@@ -253,94 +422,13 @@ async function renderSchoolRank() {
         });
         const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
         let h = sorted.map(([name, total], i) => `
-            <div class="card">
-                <span><b>${i + 1}위. ${name}</b></span>
-                <span style="color:#d32f2f;">총합 파워 ${total} LV</span>
+            <div class="card" style="margin-bottom:10px;">
+                <span style="font-size:1.2em;"><b>${i + 1}위. ${name}</b></span>
+                <b style="color:var(--a); font-size:1.3em;">총합 파워 ${total} LV</b>
             </div>
         `).join('');
         listEl.innerHTML = h || "<p>아직 등록된 학교가 없습니다.</p>";
-    } catch (e) { listEl.innerHTML = "<p>서버 연결 실패!</p>"; }
-}
-
-// 화면 전환 및 기타 로직 (기존과 동일)
-window.showScreen = function(name) {
-    if (!isLogged) return;
-    document.querySelectorAll('.panel > div').forEach(el => { if(el.id.startsWith('screen-')) el.classList.add('hidden'); });
-    document.getElementById('screen-' + name).classList.remove('hidden');
-    if (name === 'rank') switchRankTab('personal');
-    if (name === 'shop') renderShop();
-    if (name === 'collection') renderCollection();
-};
-
-async function renderRank() {
-    const listEl = document.getElementById('rank-list');
-    listEl.innerHTML = "<p>개인 랭킹 로딩 중...</p>";
-    try {
-        const q = query(ref(db, 'players'), orderByChild('lv'), limitToLast(10));
-        const snap = await get(q);
-        let list = []; snap.forEach(c => list.push(c.val()));
-        list.sort((a, b) => b.lv - a.lv);
-        listEl.innerHTML = list.map((p, i) => `<div class="card"><span>${i+1}등. ${p.school} [${p.nickname}]</span><b>LV.${p.lv}</b></div>`).join('');
-    } catch(e) { listEl.innerHTML = "<p>실패!</p>"; }
-}
-
-window.handleAttack = function() {
-    if (!isLogged) return;
-    const input = document.getElementById('answer-input');
-    const val = parseFloat(input.value.trim());
-    if (isNaN(val)) return;
-    const p = gameState.player;
-    const timeSpent = (Date.now() - curProb.start) / 1000;
-    if (Math.abs(val - curProb.a) < 0.001) {
-        p.curCombo++;
-        let finalDmg = Math.floor(p.atk * (timeSpent <= p.bonusTime ? 2 : 1) * (1 + p.curCombo * 0.05));
-        curMons.hp -= finalDmg; addLog(`🗡️ ${finalDmg} 데미지!`);
-        if (curMons.hp <= 0) win(); else nextProb();
-    } else {
-        p.curCombo = 0; p.hp -= 15; addLog(`😭 오답! (정답: ${curProb.a})`);
-        if (p.hp <= 0) { alert("마을에서 회복하세요!"); p.hp = 30; nextProb(); } else nextProb();
-    }
-    input.value = ""; updateUI();
-};
-
-function renderShop() {
-    let h = "";
-    shopItems.forEach(i => {
-        h += `<div class="card"><div><span class="tag">${i.icon}</span> <b>${i.name}</b><br><small>${i.desc}</small></div><button class="action-btn" style="background:#4caf50;" onclick="buyItem('${i.name}')">${i.price}G</button></div>`;
-    });
-    document.getElementById('shop-list').innerHTML = h;
-}
-
-window.buyItem = function(name) {
-    const item = shopItems.find(i => i.name === name);
-    const p = gameState.player;
-    if (p.gold >= item.price) {
-        p.gold -= item.price;
-        if (item.type === 'w') p.atk = item.val;
-        else if (item.type === 'a') p.comboRate = item.val;
-        else if (item.type === 'x') p.bonusTime = item.val;
-        set(ref(db, 'players/' + `${p.school}-${p.nickname}`), p);
-        updateUI(); renderShop(); alert("구매 완료!");
-    } else alert("골드 부족!");
-};
-
-function renderCollection() {
-    let h = "";
-    monsterMaster.forEach(m => {
-        const c = gameState.player.collection[m.name] || 0;
-        h += `<div class="card" style="flex-direction:column; text-align:center;"><div style="font-size:3em;">${c>0?m.sprite:"❓"}</div><b>${m.name}</b><div style="color:var(--a);">처치: ${c}마리</div></div>`;
-    });
-    document.getElementById('collection-grid').innerHTML = h;
-}
-
-function nextProb() {
-    const lv = gameState.player.lv;
-    let div = Math.floor(Math.random() * 8) + 2;
-    let quo = (lv <= 5) ? (Math.floor(Math.random() * 89) + 11) / 10 : (Math.floor(Math.random() * 899) + 101) / 100;
-    let den = parseFloat((div * quo).toFixed(2));
-    curProb = { q: `${den} ÷ ${div} = ?`, a: quo, start: Date.now() };
-    document.getElementById('p-text').innerText = curProb.q;
-    document.getElementById('answer-input').focus();
+    } catch (e) { listEl.innerHTML = "<p>서버 연결 중 오류 발생!</p>"; }
 }
 
 function updateUI() {
@@ -349,13 +437,18 @@ function updateUI() {
     document.getElementById('lv').innerText = p.lv; 
     document.getElementById('gold').innerText = p.gold;
     document.getElementById('hp-text').innerText = `${Math.max(0, p.hp)}/${p.maxHp}`;
-    document.getElementById('atk-val').innerText = p.atk || 10;
-    document.getElementById('combo-val').innerText = p.comboRate || 0;
-    document.getElementById('time-val').innerText = p.bonusTime || 5;
+    document.getElementById('atk-val').innerText = p.atk;
+    document.getElementById('combo-val').innerText = p.comboRate;
+    document.getElementById('time-val').innerText = p.bonusTime;
     document.getElementById('hp-bar-fill').style.width = (p.hp/p.maxHp*100) + "%";
     document.getElementById('m-hp-fill').style.width = (curMons.hp/curMons.maxHp*100) + "%";
 }
 
+// 이펙트 및 로그 관련 함수들
+function showFloatingHint(m) { const area = document.getElementById('monster-area'); const h = document.createElement('div'); h.className = 'floating-hint'; h.innerHTML = `💡 ${m}`; area.appendChild(h); setTimeout(() => h.remove(), 2500); }
+function showCombo(n) { const b = document.getElementById('combo-badge'); if (n > 1) { b.style.display = "block"; b.innerText = `${n} COMBO!`; } }
+function hideCombo() { document.getElementById('combo-badge').style.display = "none"; }
+function die() { alert("체력이 소진되었습니다! 마을에서 회복 후 다시 도전하세요."); gameState.player.hp = 30; save(); showScreen('battle'); updateUI(); }
 function addLog(m) { const l = document.getElementById('battle-log'); l.innerHTML = `<div>> ${m}</div>` + l.innerHTML; }
 </script>
 </body>
