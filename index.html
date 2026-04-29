@@ -18,7 +18,6 @@
 
         body { font-family: 'Jua', sans-serif; background: var(--bg); color: var(--t); margin: 0; padding: 0; overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh; }
         
-        /* 상단 네비게이션 */
         #top-bar { 
             background: #ffffff; padding: 10px 15px; border-bottom: 5px solid var(--p);
             display: flex; justify-content: center; align-items: center; gap: 15px;
@@ -39,7 +38,6 @@
 
         #footer { text-align: center; padding: 15px; font-size: 0.85em; color: #999; letter-spacing: 1px; }
 
-        /* 애니메이션 이펙트 */
         @keyframes floatUp { 0% { opacity: 0; transform: translate(-50%, 0); } 10% { opacity: 1; transform: translate(-50%, -20px); } 100% { opacity: 0; transform: translate(-50%, -60px); } }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         @keyframes flashRed { 0% { background-color: #ffcdd2; } 100% { background-color: #e8f5e9; } }
@@ -61,7 +59,6 @@
         .btn-attack { background: var(--a); font-size: 1.6em; box-shadow: 0 5px 0 #d32f2f; margin-left: 10px; }
         .btn-nav { width: 100%; margin-top: 10px; font-size: 1.2em; box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
 
-        /* 랭킹 탭 스타일 */
         .rank-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
         .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 12px; font-family: 'Jua'; cursor: pointer; background: #eee; font-size: 1.1em; transition: 0.2s; }
         .tab-btn.active { background: var(--p); color: #1565c0; font-weight: bold; border: 2px solid #64b5f6; }
@@ -169,6 +166,7 @@
 <div id="footer">made by 로그린쌤</div>
 
 <script type="module">
+// [💡 Step 1] 파이어베이스 기본 세팅 (수정 없음)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, get, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
@@ -185,6 +183,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+// [💡 Step 2] 게임 데이터 (상점/몬스터) 유지
 const shopItems = [
     { type: 'w', icon: "🪵", name: "연습용 목검", desc: "시작보다 묵직한 타격감", price: 100, val: 15 },
     { type: 'w', icon: "🗡️", name: "소수점 단검", desc: "소수점 사이를 파고드는 날카로움", price: 300, val: 25 },
@@ -242,6 +241,7 @@ window.processLogin = async function() {
 
 function save() { if (isLogged) set(ref(db, 'players/' + `${gameState.player.school}-${gameState.player.nickname}`), gameState.player); }
 
+// [💡 Step 3] 전투 시스템 및 흔들림/빨간불/콤보 이펙트 유지
 window.handleAttack = function() {
     if (!isLogged) return;
     const input = document.getElementById('answer-input');
@@ -373,7 +373,6 @@ function renderCollection() {
     document.getElementById('collection-grid').innerHTML = h;
 }
 
-// [검토 완료] window 객체에 정상 할당하여 클릭 시 확실히 작동합니다.
 window.showScreen = function(name) {
     if (!isLogged) return;
     document.querySelectorAll('.panel > div').forEach(el => { if(el.id.startsWith('screen-')) el.classList.add('hidden'); });
@@ -391,20 +390,45 @@ window.switchRankTab = function(type) {
     if (type === 'personal') window.renderRank(); else window.renderSchoolRank();
 };
 
-// [검토 완료] 개인 랭킹을 정확히 10명만 불러옵니다.
+
+// ✨ [핵심 수정] 파이어베이스 편식 방지: 전체 데이터 가져와서 브라우저가 직접 10명 강제 정렬!
 window.renderRank = async function() {
     const listEl = document.getElementById('rank-list');
     listEl.innerHTML = "<p>개인 랭킹 로딩 중...</p>";
     try {
-        const q = query(ref(db, 'players'), orderByChild('lv'), limitToLast(10));
-        const snap = await get(q);
-        let list = []; snap.forEach(c => list.push(c.val()));
-        list.sort((a, b) => b.lv - a.lv);
-        listEl.innerHTML = list.map((p, i) => `<div class="card"><span>${i+1}등. ${p.school} [${p.nickname}]</span><b style="color:var(--a);">LV.${p.lv}</b></div>`).join('');
-    } catch(e) { listEl.innerHTML = "<p>랭킹을 불러오는데 실패했습니다.</p>"; }
+        // limitToLast(10) 제거! 전체 데이터를 싹 다 가져옵니다.
+        const snap = await get(ref(db, 'players'));
+        let list = []; 
+        if (snap.exists()) {
+            snap.forEach(child => {
+                const p = child.val();
+                if (p && p.lv) { // 에러 방지용: 데이터가 제대로 있는 학생만 추가
+                    list.push(p);
+                }
+            });
+        }
+        
+        // 브라우저가 직접 레벨 높은 순(내림차순)으로 완벽하게 줄 세우기 (Number로 강제 변환)
+        list.sort((a, b) => Number(b.lv) - Number(a.lv));
+        
+        // 1등부터 10등까지만 딱 자르기!
+        const top10 = list.slice(0, 10);
+        
+        let h = top10.map((p, i) => `
+            <div class="card" style="margin-bottom:10px;">
+                <span style="font-size:1.2em;">${i+1}등. ${p.school} [${p.nickname}]</span>
+                <b style="color:var(--a); font-size:1.3em;">LV.${p.lv}</b>
+            </div>
+        `).join('');
+        
+        listEl.innerHTML = h || "<p>아직 등록된 용사가 없습니다.</p>";
+    } catch(e) { 
+        listEl.innerHTML = "<p>랭킹을 불러오는데 실패했습니다.</p>"; 
+        console.error(e);
+    }
 };
 
-// [검토 완료] 전국 학교 랭킹 합산 후 정확히 20위까지만 자릅니다 (.slice(0, 20) 적용).
+// ✨ [핵심 수정] 학교 랭킹은 정확히 20위까지만 자릅니다!
 window.renderSchoolRank = async function() {
     const listEl = document.getElementById('school-rank-list');
     listEl.innerHTML = "<p>전국 학교 데이터를 집계 중...</p>";
@@ -417,7 +441,7 @@ window.renderSchoolRank = async function() {
         });
         const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
         
-        // ✨ 핵심: 상위 20개 학교만 잘라냅니다.
+        // 딱 20위까지만 자르기!
         const top20 = sorted.slice(0, 20);
         
         let h = top20.map(([name, total], i) => `
@@ -429,6 +453,7 @@ window.renderSchoolRank = async function() {
         listEl.innerHTML = h || "<p>아직 등록된 학교가 없습니다.</p>";
     } catch (e) { listEl.innerHTML = "<p>서버 연결 중 오류 발생!</p>"; }
 };
+
 
 function updateUI() {
     const p = gameState.player;
