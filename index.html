@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>소수의 나눗셈 용사</title>
+    
+    <meta property="og:title" content="⚔️ 소수의 나눗셈 용사">
+    <meta property="og:description" content="나눗셈 몬스터를 물리치고 우리 학교 명예의 전당에 이름을 올려보세요!">
+    <meta property="og:image" content="https://logrinssam.github.io/mathhero_decimals/thumbnail.png">
+    <meta property="og:url" content="https://logrinssam.github.io/mathhero_decimals/">
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
         :root { --p: #b3e5fc; --s: #ffeb3b; --a: #ff5252; --t: #5d4037; --bg: #f0f9ff; }
@@ -12,13 +18,11 @@
 
         body { font-family: 'Jua', sans-serif; background: var(--bg); color: var(--t); margin: 0; padding: 0; overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh; }
         
-        /* 상단 네비게이션 */
         #top-bar { 
             background: #ffffff; padding: 10px 15px; border-bottom: 5px solid var(--p);
             display: flex; justify-content: center; align-items: center; gap: 15px;
             position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        /* [수정] 학교 예시 텍스트 변경은 placeholder 속성에서 처리됨 */
         #top-bar input { font-family: 'Jua'; padding: 8px; border: 3px solid var(--p); border-radius: 12px; text-align: center; width: 140px; font-size: 1rem; }
         .btn-start { background: var(--a); border: none; border-radius: 12px; color: white; padding: 8px 25px; cursor: pointer; font-family: 'Jua'; font-size: 1.1em; box-shadow: 0 4px 0 #d32f2f; }
 
@@ -32,10 +36,12 @@
         #status-panel p { font-size: 1.25em; margin: 15px 0; font-weight: bold; color: #444; } 
         #hero-nickname { font-size: 2.2em; margin: 5px 0; color: #333; }
 
-        /* 바닥글 스타일 */
+        /* 학교 합산 레벨 뱃지 스타일 */
+        .school-total-badge { background: #e3f2fd; border: 3px solid #64b5f6; padding: 12px; border-radius: 20px; margin: 15px 0; text-align: center; font-size: 1.3em; color: #1565c0; font-weight: bold; box-shadow: 0 4px 0 rgba(0,0,0,0.05); }
+        .school-total-badge span { color: #d32f2f; font-size: 1.4em; }
+
         #footer { text-align: center; padding: 15px; font-size: 0.85em; color: #999; letter-spacing: 1px; }
 
-        /* 애니메이션 및 기타 스타일 생략 (기존과 동일) */
         @keyframes floatUp { 0% { opacity: 0; transform: translate(-50%, 0); } 10% { opacity: 1; transform: translate(-50%, -20px); } 100% { opacity: 0; transform: translate(-50%, -60px); } }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         @keyframes flashRed { 0% { background-color: #ffcdd2; } 100% { background-color: #e8f5e9; } }
@@ -76,6 +82,7 @@
             .game-main-title { font-size: 1.3em; }
             #hero-nickname { font-size: 1.8em; }
             #status-panel p { font-size: 1.1em; margin: 10px 0; }
+            .school-total-badge { font-size: 1.1em; padding: 10px; margin: 10px 0; }
             #m-sprite { font-size: 5em; } 
             #problem-banner { font-size: 2.8em; padding: 15px; margin-bottom: 15px; }
             #answer-input { font-size: 1.6em; width: 120px; }
@@ -101,6 +108,12 @@
             <h2 id="hero-nickname">닉네임</h2>
             <div style="background:var(--s); padding:8px 25px; border-radius:25px; margin-top:10px; font-size: 1.3em;">LV. <span id="lv">1</span></div>
         </center>
+        
+        <div class="school-total-badge" id="school-badge" style="display: none;">
+            🏫 <b id="display-school-name">우리 학교</b> 총 레벨<br>
+            <span id="school-total-lv">불러오는 중...</span>
+        </div>
+
         <hr style="border: 1px dashed var(--p); margin: 20px 0;">
         <p>❤️ 체력: <span id="hp-text">100/100</span></p>
         <div class="bar-bg"><div id="hp-bar-fill" class="bar-fill"></div></div>
@@ -155,7 +168,8 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, set, get, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+// [추가] equalTo를 불러와 특정 학교 데이터만 합산할 수 있게 합니다.
+import { getDatabase, ref, set, get, query, orderByChild, limitToLast, equalTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDUADGY2c1Y7BFQQVImgHqX92xjNbdGLXk",
@@ -170,7 +184,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 상점/몬스터 데이터 및 게임 로직 (생략 - 기존과 동일)
 const shopItems = [
     { type: 'w', icon: "🪵", name: "연습용 목검", desc: "시작보다 묵직한 타격감", price: 100, val: 15 },
     { type: 'w', icon: "🗡️", name: "소수점 단검", desc: "소수점 사이를 파고드는 날카로움", price: 300, val: 25 },
@@ -199,6 +212,26 @@ const monsterMaster = [
 let gameState = { player: { nickname: "", school: "", lv: 1, hp: 100, maxHp: 100, gold: 0, exp: 0, maxExp: 50, atk: 10, comboRate: 0, bonusTime: 5, curCombo: 0, weapon: "무딘 검", armor: "평상복", acc: "없음", collection: { "소수점 슬라임": 0, "나눗셈 고스트": 0, "분할 골렘": 0, "소수 가시": 0 } } };
 let isLogged = false, curProb = { q: "", a: 0, start: 0 }, curMons = { name: "", sprite: "", hp: 0, maxHp: 0 };
 
+// [신규 로직] 같은 학교 학생들의 레벨을 모두 더해주는 함수
+async function updateSchoolTotalLevel() {
+    if (!isLogged) return;
+    try {
+        const q = query(ref(db, 'players'), orderByChild('school'), equalTo(gameState.player.school));
+        const snap = await get(q);
+        let total = 0;
+        if (snap.exists()) {
+            snap.forEach(child => {
+                total += (child.val().lv || 0);
+            });
+        }
+        document.getElementById('school-badge').style.display = 'block';
+        document.getElementById('display-school-name').innerText = gameState.player.school;
+        document.getElementById('school-total-lv').innerText = total + " LV";
+    } catch (e) {
+        console.error("학교 레벨 로드 실패:", e);
+    }
+}
+
 window.processLogin = async function() {
     const sInput = document.getElementById('school-name');
     const nInput = document.getElementById('user-nick');
@@ -222,7 +255,11 @@ window.processLogin = async function() {
         document.getElementById('start-button').innerText = "접속 완료";
         document.getElementById('start-button').disabled = true;
         sInput.disabled = true; nInput.disabled = true;
-        updateUI(); spawn(); nextProb();
+        
+        updateUI(); 
+        spawn(); 
+        nextProb();
+        updateSchoolTotalLevel(); // 접속 시 학교 총 레벨 계산
     } catch(e) { alert("연결 실패! 인터넷 환경을 확인하세요."); }
 };
 
@@ -282,8 +319,15 @@ function win() {
     let goldGain = Math.floor(50 * goldMult);
     p.gold += goldGain; p.exp += 20; p.collection[curMons.name] = count + 1;
     addLog(`✨ 승리! ${goldGain}G 획득.`);
-    if (p.exp >= p.maxExp) { p.lv++; p.exp = 0; p.maxHp += 20; p.hp = p.maxHp; alert(`🎊 레벨 업! 현재 LV.${p.lv}`); }
-    save(); spawn(); nextProb();
+    if (p.exp >= p.maxExp) { 
+        p.lv++; p.exp = 0; p.maxHp += 20; p.hp = p.maxHp; 
+        alert(`🎊 레벨 업! 현재 LV.${p.lv}`);
+        save();
+        updateSchoolTotalLevel(); // 레벨업 할 때마다 학교 총합 갱신
+    } else {
+        save(); 
+    }
+    spawn(); nextProb();
 }
 
 window.showScreen = function(name) {
