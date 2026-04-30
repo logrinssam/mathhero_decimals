@@ -33,7 +33,7 @@
         .hidden { display: none !important; }
 
         .game-main-title { color: var(--a); font-size: 1.5em; margin-bottom: 5px; text-shadow: 1px 1px 0px #fff; font-weight: bold; }
-        #status-panel p { font-size: 1.25em; margin: 15px 0; font-weight: bold; color: #444; } 
+        #status-panel p { font-size: 1.2em; margin: 10px 0; font-weight: bold; color: #444; } 
         #hero-nickname { font-size: 2.2em; margin: 5px 0; color: #333; }
 
         #footer { text-align: center; padding: 15px; font-size: 0.85em; color: #999; letter-spacing: 1px; }
@@ -70,6 +70,7 @@
         .tag-w { background: #ffebee; color: #d32f2f; }
         .tag-a { background: #f3e5f5; color: #7e57c2; }
         .tag-x { background: #e8f5e9; color: #2e7d32; }
+        .tag-e { background: #fff9c4; color: #f57f17; } /* 💡 신규 유물(경험치) 태그 색상 */
 
         #combo-badge { position: absolute; top: -10px; right: -10px; background: #ff9800; color: white; padding: 6px 15px; border-radius: 20px; font-size: 1.2em; box-shadow: 0 4px 0 #e65100; transform: rotate(12deg); display: none; z-index: 50; }
 
@@ -85,7 +86,7 @@
             .panel { padding: 15px; border-width: 4px; border-radius: 20px; }
             .game-main-title { font-size: 1.3em; }
             #hero-nickname { font-size: 1.8em; }
-            #status-panel p { font-size: 1.1em; margin: 10px 0; }
+            #status-panel p { font-size: 1.05em; margin: 8px 0; }
             #m-sprite { font-size: 5em; } 
             #problem-banner { font-size: 2.8em; padding: 15px; margin-bottom: 15px; }
             #answer-input { font-size: 1.6em; width: 120px; }
@@ -117,15 +118,16 @@
             </label>
         </center>
         
-        <hr style="border: 1px dashed var(--p); margin: 20px 0;">
+        <hr style="border: 1px dashed var(--p); margin: 15px 0;">
         <p>❤️ 체력: <span id="hp-text">100/100</span></p>
         <div class="bar-bg"><div id="hp-bar-fill" class="bar-fill"></div></div>
         <p>💰 골드: <span id="gold">0</span> G</p>
-        <hr>
+        <hr style="margin: 15px 0;">
         <p>🗡️ 공격력: <span id="atk-val">10</span></p>
         <p>👕 콤보보너스: <span id="combo-val">0</span>%</p>
         <p>💍 보너스시간: <span id="time-val">5</span>초</p>
-        <hr>
+        <p>✨ 추가경험치: <span id="exp-val">0</span>%</p> <!-- 💡 신규 능력치 UI 추가 -->
+        <hr style="margin: 15px 0;">
         <button class="action-btn btn-nav" style="background:#ffa726;" onclick="window.showScreen('shop')">🏪 만물상점</button>
         <button class="action-btn btn-nav" style="background:#66bb6a;" onclick="window.showScreen('rank')">🏆 전국 용사 순위</button>
         <button class="action-btn btn-nav" style="background:#42a5f5;" onclick="window.showScreen('collection')">👾 몬스터 도감</button>
@@ -192,7 +194,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 💡 [대규모 밸런스 조정] 무기(300->600->1000->1500) 및 방어구 추가, 장신구는 깔끔하게 기존 유지!
+// 💡 [신규 추가] 'e' (유물/경험치템) 카테고리 추가!
 const shopItems = [
     { type: 'w', icon: "🪵", name: "연습용 목검", desc: "시작보다 묵직한 타격감", price: 100, val: 15 },
     { type: 'w', icon: "🗡️", name: "소수점 단검", desc: "소수점 사이를 파고드는 날카로움", price: 300, val: 25 },
@@ -216,7 +218,12 @@ const shopItems = [
     { type: 'x', icon: "💍", name: "은빛 반지", desc: "차분하게 점을 찍을 수 있는 시간", price: 600, val: 9 },
     { type: 'x', icon: "📿", name: "푸른 보석 목걸이", desc: "느려도 괜찮아요! 신속템", price: 1300, val: 12 },
     { type: 'x', icon: "🧭", name: "차원의 나침반", desc: "시간이 멈춘 듯한 여유로움", price: 2800, val: 16 },
-    { type: 'x', icon: "⌛", name: "시간의 지배자", desc: "22초 안에만 풀면 무조건 2배!", price: 6500, val: 22 }
+    { type: 'x', icon: "⌛", name: "시간의 지배자", desc: "22초 안에만 풀면 무조건 2배!", price: 6500, val: 22 },
+
+    // 💡 [신규] 유물 (경험치 부스터) 라인업
+    { type: 'e', icon: "📜", name: "학자의 두루마리", desc: "나눗셈의 깨달음으로 광속 성장!", price: 8000, val: 50 },
+    { type: 'e', icon: "🎓", name: "현자의 모자", desc: "경험치를 무려 2배(더블)로 늘려준다", price: 25000, val: 100 },
+    { type: 'e', icon: "🏆", name: "깨달음의 성배", desc: "경험치 획득량 3배(200%) 폭발!", price: 55000, val: 200 }
 ];
 
 const monsterMaster = [
@@ -229,7 +236,8 @@ const monsterMaster = [
     { name: "시공의 지배자 제로", sprite: "🌌", desc: "200레벨을 돌파한 진정한 신화적 존재!", reqLv: 200 }
 ];
 
-let gameState = { player: { nickname: "", school: "", lv: 1, hp: 100, maxHp: 100, gold: 0, exp: 0, maxExp: 50, atk: 10, comboRate: 0, bonusTime: 5, curCombo: 0, isSecret: true, weapon: "무딘 검", armor: "평상복", acc: "없음", collection: { "소수점 슬라임": 0, "나눗셈 고스트": 0, "분할 골렘": 0, "소수 가시": 0, "소수점 드래곤": 0, "무한소수 마왕": 0, "시공의 지배자 제로": 0 } } };
+// 💡 gameState에 expBonus(추가 경험치) 초기값 추가
+let gameState = { player: { nickname: "", school: "", lv: 1, hp: 100, maxHp: 100, gold: 0, exp: 0, maxExp: 50, atk: 10, comboRate: 0, bonusTime: 5, expBonus: 0, curCombo: 0, isSecret: true, weapon: "무딘 검", armor: "평상복", acc: "없음", expItem: "없음", collection: { "소수점 슬라임": 0, "나눗셈 고스트": 0, "분할 골렘": 0, "소수 가시": 0, "소수점 드래곤": 0, "무한소수 마왕": 0, "시공의 지배자 제로": 0 } } };
 let isLogged = false, curProb = { q: "", a: 0, start: 0 }, curMons = { name: "", sprite: "", hp: 0, maxHp: 0 };
 
 window.processLogin = async function() {
@@ -250,6 +258,10 @@ window.processLogin = async function() {
             if(gameState.player.collection["시공의 지배자 제로"] === undefined) gameState.player.collection["시공의 지배자 제로"] = 0;
             
             if(gameState.player.isSecret === undefined) gameState.player.isSecret = true;
+            
+            // 💡 구버전 유저 호환성 패치 (경험치 보너스가 없으면 0으로)
+            if(gameState.player.expBonus === undefined) gameState.player.expBonus = 0;
+            if(gameState.player.expItem === undefined) gameState.player.expItem = "없음";
             
             alert(`✅ 반갑습니다, ${gameState.player.nickname} 용사님!\n기록을 불러왔습니다.`);
         } else {
@@ -346,9 +358,13 @@ function win() {
     let goldGain = Math.floor(50 * goldMult);
     p.gold += goldGain; 
     
-    p.exp += 20; 
+    // 💡 [핵심 패치] 유물을 장착하면 경험치가 폭발적으로 증가하는 공식 추가!
+    let expBonusMult = 1 + ((p.expBonus || 0) / 100); 
+    let expGain = Math.floor(20 * expBonusMult);
+    
+    p.exp += expGain; 
     p.collection[curMons.name] = count + 1;
-    addLog(`✨ 승리! ${goldGain}G 획득.`);
+    addLog(`✨ 승리! ${goldGain}G, ${expGain} EXP 획득.`);
 
     let currentNeedExp = 50 + (p.lv * 5); 
     if (p.maxExp < currentNeedExp) p.maxExp = currentNeedExp;
@@ -386,9 +402,11 @@ function spawn() {
 function renderShop() {
     let h = "";
     shopItems.forEach(i => {
-        let tClass = i.type === 'w' ? 'tag-w' : (i.type === 'a' ? 'tag-a' : 'tag-x');
-        let tName = i.type === 'w' ? '무기' : (i.type === 'a' ? '방어구' : '장신구');
-        let eff = i.type === 'w' ? `공격력 ${i.val}` : (i.type === 'a' ? `콤보+${i.val}%` : `보너스 ${i.val}초`);
+        // 💡 'e' 타입 UI 처리
+        let tClass = i.type === 'w' ? 'tag-w' : (i.type === 'a' ? 'tag-a' : (i.type === 'x' ? 'tag-x' : 'tag-e'));
+        let tName = i.type === 'w' ? '무기' : (i.type === 'a' ? '방어구' : (i.type === 'x' ? '장신구' : '유물(성장)'));
+        let eff = i.type === 'w' ? `공격력 ${i.val}` : (i.type === 'a' ? `콤보+${i.val}%` : (i.type === 'x' ? `보너스 ${i.val}초` : `경험치+${i.val}%`));
+        
         h += `<div class="card"><div style="flex:1;"><span class="tag ${tClass}">${tName} ${i.icon}</span><br><b>${i.name}</b><br><small>"${i.desc}"</small><br><b>효과: ${eff}</b></div><button class="action-btn" style="background:#4caf50;" onclick="window.buyItem('${i.name}')">${i.price}G</button></div>`;
     });
     document.getElementById('shop-list').innerHTML = h;
@@ -402,6 +420,7 @@ window.buyItem = function(name) {
     if (item.type === 'w' && p.atk >= item.val) isDowngrade = true;
     if (item.type === 'a' && p.comboRate >= item.val) isDowngrade = true;
     if (item.type === 'x' && p.bonusTime >= item.val) isDowngrade = true;
+    if (item.type === 'e' && (p.expBonus || 0) >= item.val) isDowngrade = true; // 💡 경험치 유물 다운그레이드 방지
 
     if (isDowngrade) {
         alert("⚠️ 이미 더 좋거나 똑같은 장비를 장착 중입니다! 골드를 낭비하지 마세요!");
@@ -413,7 +432,9 @@ window.buyItem = function(name) {
         if (item.type === 'w') { p.weapon = item.name; p.atk = item.val; }
         else if (item.type === 'a') { p.armor = item.name; p.comboRate = item.val; }
         else if (item.type === 'x') { p.acc = item.name; p.bonusTime = item.val; }
-        save(); updateUI(); renderShop(); alert(`✨ ${item.name} 장착 완료! 전투력이 상승했습니다!`);
+        else if (item.type === 'e') { p.expItem = item.name; p.expBonus = item.val; } // 💡 경험치 유물 구매 적용
+        
+        save(); updateUI(); renderShop(); alert(`✨ ${item.name} 획득 완료! 캐릭터가 성장했습니다!`);
     } else alert("❌ 골드가 부족해요! 몬스터를 더 잡고 오세요.");
 };
 
@@ -551,6 +572,7 @@ function updateUI() {
     document.getElementById('atk-val').innerText = p.atk;
     document.getElementById('combo-val').innerText = p.comboRate;
     document.getElementById('time-val').innerText = p.bonusTime;
+    document.getElementById('exp-val').innerText = p.expBonus || 0; // 💡 화면에 경험치 획득량 렌더링
     document.getElementById('hp-bar-fill').style.width = (p.hp/p.maxHp*100) + "%";
     document.getElementById('m-hp-fill').style.width = (curMons.hp/curMons.maxHp*100) + "%";
 }
