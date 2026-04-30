@@ -328,16 +328,14 @@ function win() {
     const count = p.collection[curMons.name] || 0;
     let goldMult = (count >= 50) ? 1.1 : (count >= 10 ? 1.05 : 1.0);
     
-    // 💡 [원상복구] 골드 획득량을 다시 빡빡하게 되돌렸습니다. (70 -> 50)
+    // 💡 [유지] 골드 50G, 경험치 20으로 빡빡한 성장 밸런스!
     let goldGain = Math.floor(50 * goldMult);
     p.gold += goldGain; 
     
-    // 💡 [원상복구] 경험치 획득량도 다시 빡빡하게 되돌렸습니다. (25 -> 20)
     p.exp += 20; 
     p.collection[curMons.name] = count + 1;
     addLog(`✨ 승리! ${goldGain}G 획득.`);
 
-    // 💡 [원상복구] 레벨업 요구치를 다시 높였습니다. 노가다가 필요합니다!
     let currentNeedExp = 50 + (p.lv * 5); 
     if (p.maxExp < currentNeedExp) p.maxExp = currentNeedExp;
 
@@ -360,8 +358,8 @@ function spawn() {
     curMons.name = m.name; curMons.sprite = m.sprite;
     
     const lv = gameState.player.lv;
-    // 💡 [유지] 몬스터 체력은 선생님 요청대로 약하게 칼질된 천사맛을 유지했습니다!
-    curMons.maxHp = 30 + (lv * 15) + Math.floor(lv * lv * 0.01); 
+    // 💡 [핵심 패치] 몬스터 체력을 1(천사맛)에서 딱 1.2배 상향! (미세 조정)
+    curMons.maxHp = 36 + (lv * 18) + Math.floor(lv * lv * 0.012); 
     curMons.hp = curMons.maxHp;
     
     document.getElementById('m-name').innerText = curMons.name;
