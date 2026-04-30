@@ -73,6 +73,10 @@
 
         #combo-badge { position: absolute; top: -10px; right: -10px; background: #ff9800; color: white; padding: 6px 15px; border-radius: 20px; font-size: 1.2em; box-shadow: 0 4px 0 #e65100; transform: rotate(12deg); display: none; z-index: 50; }
 
+        /* 체크박스 스타일 */
+        .secret-toggle-label { margin-top: 10px; font-size: 1em; color: #555; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; background: #f5f5f5; padding: 5px 15px; border-radius: 15px; border: 2px solid #ddd; transition: 0.2s; }
+        .secret-toggle-label:hover { background: #eeeeee; }
+
         @media screen and (max-width: 768px) {
             #top-bar { flex-wrap: wrap; padding: 10px; gap: 8px; }
             #top-bar input { width: 40%; font-size: 0.9em; padding: 8px; }
@@ -106,7 +110,14 @@
             <div class="game-main-title">소수의 나눗셈 용사</div>
             <h2 id="hero-nickname">닉네임</h2>
             <div style="background:var(--s); padding:8px 25px; border-radius:25px; margin-top:10px; font-size: 1.3em;">LV. <span id="lv">1</span></div>
+            
+            <!-- 💡 [신규] 프라이버시 선택 스위치 -->
+            <label class="secret-toggle-label">
+                <input type="checkbox" id="secret-toggle" onchange="window.toggleSecret()"> 
+                🕵️ 랭킹에 내 이름 숨기기(★)
+            </label>
         </center>
+        
         <hr style="border: 1px dashed var(--p); margin: 20px 0;">
         <p>❤️ 체력: <span id="hp-text">100/100</span></p>
         <div class="bar-bg"><div id="hp-bar-fill" class="bar-fill"></div></div>
@@ -147,7 +158,7 @@
         <div id="screen-rank" class="hidden">
             <h2 style="text-align:center; margin-top:0;">🏆 전국 용사 순위 🏆</h2>
             <div class="rank-tabs">
-                <button class="tab-btn active" id="tab-personal" onclick="window.switchRankTab('personal')">👤 개인 TOP 10</button>
+                <button class="tab-btn active" id="tab-personal" onclick="window.switchRankTab('personal')">👤 개인 TOP 30</button>
                 <button class="tab-btn" id="tab-school" onclick="window.switchRankTab('school')">🏫 학교 연합 랭킹</button>
             </div>
             <div id="rank-list"></div>
@@ -207,7 +218,8 @@ const monsterMaster = [
     { name: "소수 가시", sprite: "🌵", desc: "뾰족한 소수점 처리가 핵심!" }
 ];
 
-let gameState = { player: { nickname: "", school: "", lv: 1, hp: 100, maxHp: 100, gold: 0, exp: 0, maxExp: 50, atk: 10, comboRate: 0, bonusTime: 5, curCombo: 0, weapon: "무딘 검", armor: "평상복", acc: "없음", collection: { "소수점 슬라임": 0, "나눗셈 고스트": 0, "분할 골렘": 0, "소수 가시": 0 } } };
+// 💡 기본적으로 isSecret(비공개) 상태를 true(안전)로 세팅해 둡니다.
+let gameState = { player: { nickname: "", school: "", lv: 1, hp: 100, maxHp: 100, gold: 0, exp: 0, maxExp: 50, atk: 10, comboRate: 0, bonusTime: 5, curCombo: 0, isSecret: true, weapon: "무딘 검", armor: "평상복", acc: "없음", collection: { "소수점 슬라임": 0, "나눗셈 고스트": 0, "분할 골렘": 0, "소수 가시": 0 } } };
 let isLogged = false, curProb = { q: "", a: 0, start: 0 }, curMons = { name: "", sprite: "", hp: 0, maxHp: 0 };
 
 window.processLogin = async function() {
@@ -223,6 +235,10 @@ window.processLogin = async function() {
         if (snap.exists()) {
             gameState.player = snap.val();
             if(!gameState.player.collection) gameState.player.collection = { "소수점 슬라임": 0, "나눗셈 고스트": 0, "분할 골렘": 0, "소수 가시": 0 };
+            
+            // 💡 기존 유저들 중 isSecret 데이터가 없는 경우를 대비해 처리합니다.
+            if(gameState.player.isSecret === undefined) gameState.player.isSecret = true;
+            
             alert(`✅ 반갑습니다, ${gameState.player.nickname} 용사님!\n기록을 불러왔습니다.`);
         } else {
             gameState.player.school = school; gameState.player.nickname = nick;
@@ -233,8 +249,28 @@ window.processLogin = async function() {
         document.getElementById('start-button').innerText = "접속 완료";
         document.getElementById('start-button').disabled = true;
         sInput.disabled = true; nInput.disabled = true;
+        
+        // UI 체크박스 상태 업데이트
+        document.getElementById('secret-toggle').checked = gameState.player.isSecret;
+        
         updateUI(); spawn(); nextProb();
     } catch(e) { alert("연결 실패! 인터넷 환경을 확인하세요."); }
+};
+
+// 💡 체크박스를 누를 때마다 서버에 프라이버시 상태가 즉시 저장됩니다!
+window.toggleSecret = function() {
+    if (!isLogged) return;
+    gameState.player.isSecret = document.getElementById('secret-toggle').checked;
+    save();
+    if(gameState.player.isSecret) {
+        alert("이제 랭킹에서 용사님의 이름이 (★)로 안전하게 숨겨집니다!");
+    } else {
+        alert("오! 랭킹에 용사님의 이름이 당당하게 공개됩니다!");
+    }
+    // 명예의 전당 화면을 띄워놓고 있었다면 즉시 새로고침
+    if(!document.getElementById('screen-rank').classList.contains('hidden')){
+        window.renderRank(); 
+    }
 };
 
 function save() { if (isLogged) set(ref(db, 'players/' + `${gameState.player.school}-${gameState.player.nickname}`), gameState.player); }
@@ -304,7 +340,6 @@ function win() {
     p.collection[curMons.name] = count + 1;
     addLog(`✨ 승리! ${goldGain}G 획득.`);
 
-    // 💡 [수정] 경험치 순한맛 밸런스 패치: 요구치를 대폭 낮춰 성장이 빠릅니다!
     let currentNeedExp = 50 + (p.lv * 2); 
     if (p.maxExp < currentNeedExp) p.maxExp = currentNeedExp;
 
@@ -327,7 +362,6 @@ function spawn() {
     curMons.name = m.name; curMons.sprite = m.sprite;
     
     const lv = gameState.player.lv;
-    // 💡 [수정] 몬스터 체력 초순한맛 밸런스 패치: 뻥튀기를 최소화했습니다!
     curMons.maxHp = 40 + (lv * 25) + Math.floor(lv * lv * 0.02); 
     curMons.hp = curMons.maxHp;
     
@@ -405,14 +439,35 @@ window.renderRank = async function() {
         }
         
         list.sort((a, b) => Number(b.lv) - Number(a.lv));
-        const top10 = list.slice(0, 10);
+        const top30 = list.slice(0, 30);
         
-        let h = top10.map((p, i) => `
+        let h = top30.map((p, i) => {
+            let n = p.nickname || "용사";
+            let masked = n;
+            
+            // 💡 [수정] 해당 용사가 '비공개(isSecret=true)'를 선택했다면 별(★) 처리합니다!
+            // isSecret 데이터가 없는 예전 데이터도 기본적으로 가려줍니다(안전제일)
+            if (p.isSecret !== false) {
+                let len = n.length;
+                if (len === 1) {
+                    masked = n; 
+                } else if (len === 2) {
+                    masked = n.charAt(0) + "★";
+                } else {
+                    let first = n.charAt(0);
+                    let last = n.charAt(len - 1);
+                    let stars = "★".repeat(len - 2);
+                    masked = first + stars + last;
+                }
+            }
+
+            return `
             <div class="card" style="margin-bottom:10px;">
-                <span style="font-size:1.2em;">${i+1}등. [${p.nickname}]</span>
+                <span style="font-size:1.2em;">${i+1}등. ${p.school} [${masked}]</span>
                 <b style="color:var(--a); font-size:1.3em;">LV.${p.lv}</b>
             </div>
-        `).join('');
+            `;
+        }).join('');
         
         listEl.innerHTML = h || "<p>아직 등록된 용사가 없습니다.</p>";
     } catch(e) { 
