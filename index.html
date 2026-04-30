@@ -166,7 +166,6 @@
 <div id="footer">made by 로그린쌤</div>
 
 <script type="module">
-// [💡 Step 1] 파이어베이스 기본 세팅 (수정 없음)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, get, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
@@ -183,7 +182,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// [💡 Step 2] 게임 데이터 (상점/몬스터) 유지
 const shopItems = [
     { type: 'w', icon: "🪵", name: "연습용 목검", desc: "시작보다 묵직한 타격감", price: 100, val: 15 },
     { type: 'w', icon: "🗡️", name: "소수점 단검", desc: "소수점 사이를 파고드는 날카로움", price: 300, val: 25 },
@@ -241,7 +239,6 @@ window.processLogin = async function() {
 
 function save() { if (isLogged) set(ref(db, 'players/' + `${gameState.player.school}-${gameState.player.nickname}`), gameState.player); }
 
-// [💡 Step 3] 전투 시스템 및 흔들림/빨간불/콤보 이펙트 유지
 window.handleAttack = function() {
     if (!isLogged) return;
     const input = document.getElementById('answer-input');
@@ -307,13 +304,14 @@ function win() {
     p.collection[curMons.name] = count + 1;
     addLog(`✨ 승리! ${goldGain}G 획득.`);
 
-    let currentNeedExp = 50 + (p.lv * 5); 
+    // 💡 [수정] 경험치 순한맛 밸런스 패치: 요구치를 대폭 낮춰 성장이 빠릅니다!
+    let currentNeedExp = 50 + (p.lv * 2); 
     if (p.maxExp < currentNeedExp) p.maxExp = currentNeedExp;
 
     if (p.exp >= p.maxExp) { 
         p.lv++; 
         p.exp = 0; 
-        p.maxExp = 50 + (p.lv * 5); 
+        p.maxExp = 50 + (p.lv * 2); 
         p.maxHp += 20; 
         p.hp = p.maxHp; 
         alert(`🎊 레벨 업! 현재 LV.${p.lv}`);
@@ -329,7 +327,8 @@ function spawn() {
     curMons.name = m.name; curMons.sprite = m.sprite;
     
     const lv = gameState.player.lv;
-    curMons.maxHp = 50 + (lv * 40) + Math.floor(lv * lv * 0.2); 
+    // 💡 [수정] 몬스터 체력 초순한맛 밸런스 패치: 뻥튀기를 최소화했습니다!
+    curMons.maxHp = 40 + (lv * 25) + Math.floor(lv * lv * 0.02); 
     curMons.hp = curMons.maxHp;
     
     document.getElementById('m-name').innerText = curMons.name;
@@ -390,33 +389,27 @@ window.switchRankTab = function(type) {
     if (type === 'personal') window.renderRank(); else window.renderSchoolRank();
 };
 
-
-// ✨ [핵심 수정] 파이어베이스 편식 방지: 전체 데이터 가져와서 브라우저가 직접 10명 강제 정렬!
 window.renderRank = async function() {
     const listEl = document.getElementById('rank-list');
     listEl.innerHTML = "<p>개인 랭킹 로딩 중...</p>";
     try {
-        // limitToLast(10) 제거! 전체 데이터를 싹 다 가져옵니다.
         const snap = await get(ref(db, 'players'));
         let list = []; 
         if (snap.exists()) {
             snap.forEach(child => {
                 const p = child.val();
-                if (p && p.lv) { // 에러 방지용: 데이터가 제대로 있는 학생만 추가
+                if (p && p.lv) {
                     list.push(p);
                 }
             });
         }
         
-        // 브라우저가 직접 레벨 높은 순(내림차순)으로 완벽하게 줄 세우기 (Number로 강제 변환)
         list.sort((a, b) => Number(b.lv) - Number(a.lv));
-        
-        // 1등부터 10등까지만 딱 자르기!
         const top10 = list.slice(0, 10);
         
         let h = top10.map((p, i) => `
             <div class="card" style="margin-bottom:10px;">
-                <span style="font-size:1.2em;">${i+1}등. ${p.school} [${p.nickname}]</span>
+                <span style="font-size:1.2em;">${i+1}등. [${p.nickname}]</span>
                 <b style="color:var(--a); font-size:1.3em;">LV.${p.lv}</b>
             </div>
         `).join('');
@@ -428,7 +421,6 @@ window.renderRank = async function() {
     }
 };
 
-// ✨ [핵심 수정] 학교 랭킹은 정확히 20위까지만 자릅니다!
 window.renderSchoolRank = async function() {
     const listEl = document.getElementById('school-rank-list');
     listEl.innerHTML = "<p>전국 학교 데이터를 집계 중...</p>";
@@ -441,7 +433,6 @@ window.renderSchoolRank = async function() {
         });
         const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
         
-        // 딱 20위까지만 자르기!
         const top20 = sorted.slice(0, 20);
         
         let h = top20.map(([name, total], i) => `
@@ -453,7 +444,6 @@ window.renderSchoolRank = async function() {
         listEl.innerHTML = h || "<p>아직 등록된 학교가 없습니다.</p>";
     } catch (e) { listEl.innerHTML = "<p>서버 연결 중 오류 발생!</p>"; }
 };
-
 
 function updateUI() {
     const p = gameState.player;
