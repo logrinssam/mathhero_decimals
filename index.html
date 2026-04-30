@@ -210,17 +210,18 @@ const shopItems = [
     { type: 'x', icon: "⌛", name: "시간의 지배자", desc: "22초 안에만 풀면 무조건 2배!", price: 6500, val: 22 }
 ];
 
-// 💡 [신규 추가] 보스 몬스터 2종 등판!
+// 💡 [핵심 패치] reqLv (요구 레벨) 속성 추가!
 const monsterMaster = [
-    { name: "소수점 슬라임", sprite: "💧", desc: "소수점 위치를 연구하세요." },
-    { name: "나눗셈 고스트", sprite: "👻", desc: "몫의 0을 찾는 능력이 필요합니다." },
-    { name: "분할 골렘", sprite: "🗿", desc: "자릿수가 많아도 당황하지 마세요." },
-    { name: "소수 가시", sprite: "🌵", desc: "뾰족한 소수점 처리가 핵심!" },
-    { name: "소수점 드래곤", sprite: "🐲", desc: "나눗셈의 정점에 선 전설의 드래곤!" },
-    { name: "무한소수 마왕", sprite: "😈", desc: "최상위권 용사만 상대할 수 있는 끝판왕!" }
+    { name: "소수점 슬라임", sprite: "💧", desc: "소수점 위치를 연구하세요.", reqLv: 1 },
+    { name: "나눗셈 고스트", sprite: "👻", desc: "몫의 0을 찾는 능력이 필요합니다.", reqLv: 1 },
+    { name: "분할 골렘", sprite: "🗿", desc: "자릿수가 많아도 당황하지 마세요.", reqLv: 1 },
+    { name: "소수 가시", sprite: "🌵", desc: "뾰족한 소수점 처리가 핵심!", reqLv: 1 },
+    { name: "소수점 드래곤", sprite: "🐲", desc: "나눗셈의 정점에 선 전설의 드래곤!", reqLv: 50 },
+    { name: "무한소수 마왕", sprite: "😈", desc: "최상위권 용사만 상대할 수 있는 끝판왕!", reqLv: 100 },
+    { name: "시공의 지배자 제로", sprite: "🌌", desc: "200레벨을 돌파한 진정한 신화적 존재!", reqLv: 200 }
 ];
 
-let gameState = { player: { nickname: "", school: "", lv: 1, hp: 100, maxHp: 100, gold: 0, exp: 0, maxExp: 50, atk: 10, comboRate: 0, bonusTime: 5, curCombo: 0, isSecret: true, weapon: "무딘 검", armor: "평상복", acc: "없음", collection: { "소수점 슬라임": 0, "나눗셈 고스트": 0, "분할 골렘": 0, "소수 가시": 0, "소수점 드래곤": 0, "무한소수 마왕": 0 } } };
+let gameState = { player: { nickname: "", school: "", lv: 1, hp: 100, maxHp: 100, gold: 0, exp: 0, maxExp: 50, atk: 10, comboRate: 0, bonusTime: 5, curCombo: 0, isSecret: true, weapon: "무딘 검", armor: "평상복", acc: "없음", collection: { "소수점 슬라임": 0, "나눗셈 고스트": 0, "분할 골렘": 0, "소수 가시": 0, "소수점 드래곤": 0, "무한소수 마왕": 0, "시공의 지배자 제로": 0 } } };
 let isLogged = false, curProb = { q: "", a: 0, start: 0 }, curMons = { name: "", sprite: "", hp: 0, maxHp: 0 };
 
 window.processLogin = async function() {
@@ -235,8 +236,10 @@ window.processLogin = async function() {
         const snap = await get(ref(db, 'players/' + userID));
         if (snap.exists()) {
             gameState.player = snap.val();
-            // 도감이 비어있거나 옛날 버전이면 신규 몬스터 자리도 만들어줍니다!
-            if(!gameState.player.collection) gameState.player.collection = { "소수점 슬라임": 0, "나눗셈 고스트": 0, "분할 골렘": 0, "소수 가시": 0, "소수점 드래곤": 0, "무한소수 마왕": 0 };
+            if(!gameState.player.collection) gameState.player.collection = { "소수점 슬라임": 0, "나눗셈 고스트": 0, "분할 골렘": 0, "소수 가시": 0 };
+            if(gameState.player.collection["소수점 드래곤"] === undefined) gameState.player.collection["소수점 드래곤"] = 0;
+            if(gameState.player.collection["무한소수 마왕"] === undefined) gameState.player.collection["무한소수 마왕"] = 0;
+            if(gameState.player.collection["시공의 지배자 제로"] === undefined) gameState.player.collection["시공의 지배자 제로"] = 0;
             
             if(gameState.player.isSecret === undefined) gameState.player.isSecret = true;
             
@@ -357,10 +360,14 @@ function win() {
 }
 
 function spawn() {
-    const m = monsterMaster[Math.floor(Math.random() * monsterMaster.length)];
+    const lv = gameState.player.lv;
+    
+    // 💡 [핵심 패치] reqLv 속성을 이용해 플레이어 레벨에 맞는 몬스터만 자동으로 걸러냅니다! (코드 초깔끔)
+    let availableMonsters = monsterMaster.filter(m => lv >= m.reqLv);
+    
+    const m = availableMonsters[Math.floor(Math.random() * availableMonsters.length)];
     curMons.name = m.name; curMons.sprite = m.sprite;
     
-    const lv = gameState.player.lv;
     curMons.maxHp = 36 + (lv * 18) + Math.floor(lv * lv * 0.012); 
     curMons.hp = curMons.maxHp;
     
@@ -411,7 +418,12 @@ function renderCollection() {
         if (count >= 50) { rank = "🏆 마스터"; next = "골드+10%, 공격력+20% 적용"; color = "#f44336"; }
         else if (count >= 25) { rank = "전문 연구원"; next = "목표: 50마리 (최종 보너스)"; color = "#7e57c2"; }
         else if (count >= 10) { rank = "숙련 연구원"; next = "목표: 25마리 (공격력+10%)"; color = "#42a5f5"; }
-        h += `<div class="card" style="flex-direction:column; border-color:${color}; text-align:center;"><div style="font-size:3.5em;">${count > 0 ? m.sprite : "❓"}</div><b>${m.name}</b><br><small>${m.desc}</small><div style="color:var(--a); margin-top:5px;">처치: ${count}마리</div><div style="background:#f5f5f5; padding:8px; border-radius:15px; margin-top:10px; font-size:0.8em; width:100%;"><b style="color:${color}">[${rank}]</b><br>${next}</div></div>`;
+        
+        // 💡 [핵심 패치] 도감에 해금 조건(레벨)을 명확하게 표시!
+        let displayName = count > 0 ? m.name : "???";
+        let displayDesc = count > 0 ? m.desc : (m.reqLv > 1 ? `🔒 LV.${m.reqLv} 달성 시 해금` : "모험 중 발견 가능");
+        
+        h += `<div class="card" style="flex-direction:column; border-color:${color}; text-align:center;"><div style="font-size:3.5em;">${count > 0 ? m.sprite : "❓"}</div><b>${displayName}</b><br><small style="color:#d32f2f;">${displayDesc}</small><div style="color:var(--a); margin-top:5px;">처치: ${count}마리</div><div style="background:#f5f5f5; padding:8px; border-radius:15px; margin-top:10px; font-size:0.8em; width:100%;"><b style="color:${color}">[${rank}]</b><br>${next}</div></div>`;
     });
     document.getElementById('collection-grid').innerHTML = h;
 }
@@ -433,7 +445,6 @@ window.switchRankTab = function(type) {
     if (type === 'personal') window.renderRank(); else window.renderSchoolRank();
 };
 
-// 💡 [대규모 업데이트] 개인 랭킹 훈장 시스템 적용!
 window.renderRank = async function() {
     const listEl = document.getElementById('rank-list');
     listEl.innerHTML = "<p>개인 랭킹 로딩 중...</p>";
@@ -470,13 +481,12 @@ window.renderRank = async function() {
                 }
             }
 
-            // 👑 등수별 훈장 로직
             let rankIcon = "";
-            if (i === 0) rankIcon = "👑";      // 1위
-            else if (i === 1) rankIcon = "🥈"; // 2위
-            else if (i === 2) rankIcon = "🥉"; // 3위
-            else if (i < 10) rankIcon = "🎖️"; // 4~10위 명예 훈장
-            else rankIcon = "🏅";              // 11~30위 용사 훈장
+            if (i === 0) rankIcon = "👑";      
+            else if (i === 1) rankIcon = "🥈"; 
+            else if (i === 2) rankIcon = "🥉"; 
+            else if (i < 10) rankIcon = "🎖️"; 
+            else rankIcon = "🏅";              
 
             return `
             <div class="card" style="margin-bottom:10px;">
@@ -493,7 +503,6 @@ window.renderRank = async function() {
     }
 };
 
-// 💡 [대규모 업데이트] 학교 연합 랭킹 훈장 시스템 적용!
 window.renderSchoolRank = async function() {
     const listEl = document.getElementById('school-rank-list');
     listEl.innerHTML = "<p>전국 학교 데이터를 집계 중...</p>";
@@ -509,12 +518,11 @@ window.renderSchoolRank = async function() {
         const top20 = sorted.slice(0, 20);
         
         let h = top20.map(([name, total], i) => {
-            // 👑 학교 등수별 트로피 로직
             let rankIcon = "";
-            if (i === 0) rankIcon = "🏆";      // 1위 학교
-            else if (i === 1) rankIcon = "🥈"; // 2위 학교
-            else if (i === 2) rankIcon = "🥉"; // 3위 학교
-            else rankIcon = "🏫";              // 나머지 학교
+            if (i === 0) rankIcon = "🏆";      
+            else if (i === 1) rankIcon = "🥈"; 
+            else if (i === 2) rankIcon = "🥉"; 
+            else rankIcon = "🏫";              
 
             return `
             <div class="card" style="margin-bottom:10px;">
