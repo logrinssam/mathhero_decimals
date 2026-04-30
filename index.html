@@ -111,7 +111,6 @@
             <h2 id="hero-nickname">닉네임</h2>
             <div style="background:var(--s); padding:8px 25px; border-radius:25px; margin-top:10px; font-size: 1.3em;">LV. <span id="lv">1</span></div>
             
-            <!-- 💡 [신규] 프라이버시 선택 스위치 -->
             <label class="secret-toggle-label">
                 <input type="checkbox" id="secret-toggle" onchange="window.toggleSecret()"> 
                 🕵️ 랭킹에 내 이름 숨기기(★)
@@ -218,7 +217,6 @@ const monsterMaster = [
     { name: "소수 가시", sprite: "🌵", desc: "뾰족한 소수점 처리가 핵심!" }
 ];
 
-// 💡 기본적으로 isSecret(비공개) 상태를 true(안전)로 세팅해 둡니다.
 let gameState = { player: { nickname: "", school: "", lv: 1, hp: 100, maxHp: 100, gold: 0, exp: 0, maxExp: 50, atk: 10, comboRate: 0, bonusTime: 5, curCombo: 0, isSecret: true, weapon: "무딘 검", armor: "평상복", acc: "없음", collection: { "소수점 슬라임": 0, "나눗셈 고스트": 0, "분할 골렘": 0, "소수 가시": 0 } } };
 let isLogged = false, curProb = { q: "", a: 0, start: 0 }, curMons = { name: "", sprite: "", hp: 0, maxHp: 0 };
 
@@ -236,7 +234,6 @@ window.processLogin = async function() {
             gameState.player = snap.val();
             if(!gameState.player.collection) gameState.player.collection = { "소수점 슬라임": 0, "나눗셈 고스트": 0, "분할 골렘": 0, "소수 가시": 0 };
             
-            // 💡 기존 유저들 중 isSecret 데이터가 없는 경우를 대비해 처리합니다.
             if(gameState.player.isSecret === undefined) gameState.player.isSecret = true;
             
             alert(`✅ 반갑습니다, ${gameState.player.nickname} 용사님!\n기록을 불러왔습니다.`);
@@ -250,14 +247,12 @@ window.processLogin = async function() {
         document.getElementById('start-button').disabled = true;
         sInput.disabled = true; nInput.disabled = true;
         
-        // UI 체크박스 상태 업데이트
         document.getElementById('secret-toggle').checked = gameState.player.isSecret;
         
         updateUI(); spawn(); nextProb();
     } catch(e) { alert("연결 실패! 인터넷 환경을 확인하세요."); }
 };
 
-// 💡 체크박스를 누를 때마다 서버에 프라이버시 상태가 즉시 저장됩니다!
 window.toggleSecret = function() {
     if (!isLogged) return;
     gameState.player.isSecret = document.getElementById('secret-toggle').checked;
@@ -267,7 +262,6 @@ window.toggleSecret = function() {
     } else {
         alert("오! 랭킹에 용사님의 이름이 당당하게 공개됩니다!");
     }
-    // 명예의 전당 화면을 띄워놓고 있었다면 즉시 새로고침
     if(!document.getElementById('screen-rank').classList.contains('hidden')){
         window.renderRank(); 
     }
@@ -333,20 +327,24 @@ function win() {
     const p = gameState.player;
     const count = p.collection[curMons.name] || 0;
     let goldMult = (count >= 50) ? 1.1 : (count >= 10 ? 1.05 : 1.0);
-    let goldGain = Math.floor(50 * goldMult);
     
+    // 💡 [원상복구] 골드 획득량을 다시 빡빡하게 되돌렸습니다. (70 -> 50)
+    let goldGain = Math.floor(50 * goldMult);
     p.gold += goldGain; 
+    
+    // 💡 [원상복구] 경험치 획득량도 다시 빡빡하게 되돌렸습니다. (25 -> 20)
     p.exp += 20; 
     p.collection[curMons.name] = count + 1;
     addLog(`✨ 승리! ${goldGain}G 획득.`);
 
-    let currentNeedExp = 50 + (p.lv * 2); 
+    // 💡 [원상복구] 레벨업 요구치를 다시 높였습니다. 노가다가 필요합니다!
+    let currentNeedExp = 50 + (p.lv * 5); 
     if (p.maxExp < currentNeedExp) p.maxExp = currentNeedExp;
 
     if (p.exp >= p.maxExp) { 
         p.lv++; 
         p.exp = 0; 
-        p.maxExp = 50 + (p.lv * 2); 
+        p.maxExp = 50 + (p.lv * 5); 
         p.maxHp += 20; 
         p.hp = p.maxHp; 
         alert(`🎊 레벨 업! 현재 LV.${p.lv}`);
@@ -362,7 +360,8 @@ function spawn() {
     curMons.name = m.name; curMons.sprite = m.sprite;
     
     const lv = gameState.player.lv;
-    curMons.maxHp = 40 + (lv * 25) + Math.floor(lv * lv * 0.02); 
+    // 💡 [유지] 몬스터 체력은 선생님 요청대로 약하게 칼질된 천사맛을 유지했습니다!
+    curMons.maxHp = 30 + (lv * 15) + Math.floor(lv * lv * 0.01); 
     curMons.hp = curMons.maxHp;
     
     document.getElementById('m-name').innerText = curMons.name;
@@ -384,13 +383,24 @@ function renderShop() {
 window.buyItem = function(name) {
     const item = shopItems.find(i => i.name === name);
     const p = gameState.player;
+
+    let isDowngrade = false;
+    if (item.type === 'w' && p.atk >= item.val) isDowngrade = true;
+    if (item.type === 'a' && p.comboRate >= item.val) isDowngrade = true;
+    if (item.type === 'x' && p.bonusTime >= item.val) isDowngrade = true;
+
+    if (isDowngrade) {
+        alert("⚠️ 이미 더 좋거나 똑같은 장비를 장착 중입니다! 골드를 낭비하지 마세요!");
+        return; 
+    }
+
     if (p.gold >= item.price) {
         p.gold -= item.price;
         if (item.type === 'w') { p.weapon = item.name; p.atk = item.val; }
         else if (item.type === 'a') { p.armor = item.name; p.comboRate = item.val; }
         else if (item.type === 'x') { p.acc = item.name; p.bonusTime = item.val; }
-        save(); updateUI(); renderShop(); alert(`${item.name} 장착 완료!`);
-    } else alert("골드가 부족해요!");
+        save(); updateUI(); renderShop(); alert(`✨ ${item.name} 장착 완료! 전투력이 상승했습니다!`);
+    } else alert("❌ 골드가 부족해요! 몬스터를 더 잡고 오세요.");
 };
 
 function renderCollection() {
@@ -445,8 +455,6 @@ window.renderRank = async function() {
             let n = p.nickname || "용사";
             let masked = n;
             
-            // 💡 [수정] 해당 용사가 '비공개(isSecret=true)'를 선택했다면 별(★) 처리합니다!
-            // isSecret 데이터가 없는 예전 데이터도 기본적으로 가려줍니다(안전제일)
             if (p.isSecret !== false) {
                 let len = n.length;
                 if (len === 1) {
