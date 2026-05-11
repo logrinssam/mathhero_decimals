@@ -3,38 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>소수의 나눗셈 용사 - 전국 통합 마스터본</title>
+    <title>소수의 나눗셈 용사 - 통합 마스터본</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
         :root { --p: #b3e5fc; --s: #ffeb3b; --a: #ff5252; --t: #5d4037; --bg: #f0f9ff; }
         * { box-sizing: border-box; }
         body { font-family: 'Jua', sans-serif; background: var(--bg); color: var(--t); margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
         
-        /* 공지 및 로그인 */
-        #top-bar { background: #fff; padding: 10px; border-bottom: 5px solid var(--p); display: flex; justify-content: center; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        #top-bar input { font-family: 'Jua'; padding: 8px; border: 3px solid var(--p); border-radius: 12px; text-align: center; width: 140px; }
+        /* [UI] 상단바 및 공지 */
+        #top-bar { background: #fff; padding: 10px; border-bottom: 5px solid var(--p); display: flex; justify-content: center; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        #top-bar input { font-family: 'Jua'; padding: 8px; border: 3px solid var(--p); border-radius: 12px; text-align: center; width: 130px; font-size: 0.9rem; }
         #notice-banner { background-color: #ffebee; color: #c62828; text-align: center; padding: 10px; font-size: 0.95em; font-weight: bold; border-bottom: 2px solid #ef9a9a; position: relative; }
         
-        /* 메인 레이아웃 */
+        /* [레이아웃] 메인 컨테이너 */
         #game-container { display: flex; width: 100%; max-width: 1100px; margin: 15px auto; padding: 0 15px; gap: 20px; flex: 1; }
         .is-locked { filter: blur(10px) grayscale(100%); pointer-events: none; opacity: 0.5; }
         .panel { background: white; border-radius: 25px; padding: 20px; box-shadow: 0 10px 0 rgba(0,0,0,0.05); border: 6px solid var(--p); }
         .hidden { display: none !important; }
         
-        /* 버튼 및 탭 */
+        /* [컴포넌트] 버튼 및 탭 */
         .btn { font-family: 'Jua'; border: none; border-radius: 15px; cursor: pointer; color: white; padding: 10px; transition: 0.2s; box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
         .btn-nav { width: 100%; margin-top: 8px; font-size: 1.1em; }
         .rank-tabs { display: flex; gap: 5px; margin-bottom: 15px; }
-        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 12px; font-family: 'Jua'; cursor: pointer; background: #eee; font-size: 0.9em; }
+        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 12px; font-family: 'Jua'; cursor: pointer; background: #eee; font-size: 0.85em; }
         .tab-btn.active { background: var(--p); color: #1565c0; font-weight: bold; border: 2px solid #64b5f6; }
 
-        /* 리스트 및 카드 */
+        /* [리스트] 카드 및 스크롤 */
         .rank-scroll { display: grid; gap: 10px; max-height: 480px; overflow-y: auto; padding-right: 5px; }
         .card { border: 3px solid var(--p); padding: 15px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; background: #fff; }
         
-        /* 전투 시스템 */
-        #monster-area { padding: 20px; border-radius: 25px; text-align: center; border: 5px solid #c8e6c9; background: #e8f5e9; margin-bottom: 15px; position: relative; }
-        .hp-bar { width: 100%; height: 20px; background: #eee; border-radius: 10px; overflow: hidden; border: 2px solid #ccc; margin: 10px 0; }
+        /* [전투] 몬스터 및 문제창 */
+        #monster-area { padding: 20px; border-radius: 25px; text-align: center; border: 5px solid #c8e6c9; background: #e8f5e9; margin-bottom: 15px; }
+        .hp-bar { width: 100%; height: 20px; background: #eee; border-radius: 10px; overflow: hidden; border: 2px solid #ccc; margin: 10px 0; position: relative; }
         .hp-fill { height: 100%; background: var(--a); transition: width 0.3s ease; }
         #problem-box { background: #fff9c4; padding: 20px; border-radius: 20px; text-align: center; font-size: 3.5em; border: 5px solid #fff176; margin-bottom: 20px; }
         #ans-input { font-family: 'Jua'; font-size: 2em; padding: 10px; border-radius: 15px; border: 4px solid var(--p); width: 150px; text-align: center; }
@@ -51,25 +51,28 @@
 </div>
 
 <div id="notice-banner">
-    📢 [긴급 패치] TOP 50 랭킹 & '오늘의 정답왕' 신설! 전국 5,500명 용사들을 환영합니다! 
+    📢 [긴급공지] 랭킹 시스템 대규모 업데이트! 개인 TOP 50 & 학교 연합 & 오늘의 정답왕 추가!
     <span onclick="this.parentElement.style.display='none'" style="position:absolute; right:15px; cursor:pointer;">X</span>
 </div>
 
 <div id="game-container" class="is-locked">
     <div id="status-panel" class="panel" style="flex: 1;">
         <center>
-            <h2 id="disp-nick" style="font-size: 2.2em; margin: 0;">용사</h2>
+            <h2 id="disp-nick" style="font-size: 2.2em; margin: 0;">용사 대기 중</h2>
             <div style="background:var(--s); padding:5px 20px; border-radius:20px; margin-top:5px; font-size:1.3em;">LV. <span id="disp-lv">1</span></div>
-            <div id="is-secret" style="margin-top:10px; font-size:0.8em; color:#888;"><input type="checkbox" id="secret-toggle" onchange="saveData()"> 🕵️ 랭킹 이름 숨기기</div>
+            <div style="margin-top:10px; font-size:0.85em; color:#666;">
+                <input type="checkbox" id="secret-toggle" onchange="saveData()"> 🕵️ 랭킹 이름 숨기기
+            </div>
         </center>
         <hr style="border: 1px dashed var(--p); margin: 20px 0;">
         <p>❤️ 체력: <span id="disp-hp">100</span> / 100</p>
         <div class="hp-bar"><div id="hp-fill-ui" class="hp-fill" style="width:100%;"></div></div>
+        <p>⭐ 경험치: <span id="disp-exp">0</span> / 100</p>
         <p>💰 골드: <span id="disp-gold">0</span> G</p>
         <p>🔥 오늘 정답: <span id="disp-today">0</span>개</p>
         <hr>
         <button class="btn btn-nav" style="background:#ffa726;" onclick="showScreen('shop')">🏪 만물상점</button>
-        <button class="btn btn-nav" style="background:#42a5f5;" onclick="showScreen('rank')">🏆 전국 랭킹</button>
+        <button class="btn btn-nav" style="background:#42a5f5;" onclick="showScreen('rank')">🏆 전국 랭킹보드</button>
         <button class="btn btn-nav" style="background:#66bb6a;" onclick="showScreen('collection')">👾 몬스터 도감</button>
         <button class="btn btn-nav" style="background:#78909c;" onclick="showScreen('battle')">⚔️ 전투복귀</button>
     </div>
@@ -86,15 +89,15 @@
                 <input type="text" id="ans-input" placeholder="정답" onkeypress="if(event.keyCode==13) handleAttack()">
                 <button onclick="handleAttack()" style="background:var(--a); color:white; border:none; border-radius:15px; padding:12px 35px; font-size:1.6em; font-family:'Jua'; cursor:pointer; box-shadow: 0 5px 0 #d32f2f; margin-left:10px;">공격!</button>
             </center>
-            <div id="battle-log" style="margin-top:20px; font-size:0.9em; color:#999; text-align:center; height:40px; overflow:hidden;"></div>
+            <div id="battle-log" style="margin-top:20px; font-size:0.95em; color:#888; text-align:center; min-height:40px;"></div>
         </div>
 
         <div id="screen-rank" class="hidden">
-            <h2 style="text-align:center; margin-top:0;">🏆 전국 명예의 전당 🏆</h2>
+            <h2 style="text-align:center; margin-top:0;">🏆 전국 용사 명예의 전당 🏆</h2>
             <div class="rank-tabs">
                 <button class="tab-btn active" id="tab-p" onclick="switchRank('p')">👤 개인 TOP 50</button>
-                <button class="tab-btn" id="tab-d" onclick="switchRank('d')">🔥 오늘 정답왕</button>
-                <button class="tab-btn" id="tab-s" onclick="switchRank('s')">🏫 학교 연합</button>
+                <button class="tab-btn" id="tab-d" onclick="switchRank('d')">🔥 오늘의 정답왕</button>
+                <button class="tab-btn" id="tab-s" onclick="switchRank('s')">🏫 학교 연합전</button>
             </div>
             <div id="rank-p" class="rank-scroll"></div>
             <div id="rank-d" class="rank-scroll hidden"></div>
@@ -103,17 +106,17 @@
 
         <div id="screen-shop" class="hidden">
             <h2 style="text-align:center;">🏪 만물상점</h2>
-            <div id="shop-items" class="rank-scroll">
-                <div class="card"><span>💊 경험치 비약 (500G) - 즉시 LV업 보조</span> <button onclick="buyItem('exp', 500)" class="btn" style="background:var(--a)">구매</button></div>
-                <div class="card"><span>🍗 고기 세트 (200G) - 체력 50 회복</span> <button onclick="buyItem('hp', 200)" class="btn" style="background:var(--a)">구매</button></div>
-                <div class="card"><span>⚔️ 날카로운 검 (1000G) - 공격력 강화</span> <button onclick="buyItem('atk', 1000)" class="btn" style="background:var(--a)">구매</button></div>
+            <div class="rank-scroll">
+                <div class="card"><span>💊 경험치 비약 (500G) - +50 EXP</span> <button onclick="buyItem('exp', 500)" class="btn" style="background:var(--a)">구매</button></div>
+                <div class="card"><span>🍖 맛있는 고기 (200G) - 체력 +50 회복</span> <button onclick="buyItem('hp', 200)" class="btn" style="background:var(--a)">구매</button></div>
+                <div class="card"><span>⚔️ 예리한 검 (1000G) - 영구 공격력 +5</span> <button onclick="buyItem('atk', 1000)" class="btn" style="background:var(--a)">구매</button></div>
             </div>
         </div>
 
         <div id="screen-collection" class="hidden">
             <h2 style="text-align:center;">👾 나의 몬스터 도감</h2>
             <div id="coll-list" class="rank-scroll" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <p style="text-align:center; grid-column: 1/3;">아직 잡은 몬스터가 없어요!</p>
+                <p style="grid-column:1/3; text-align:center;">도감이 비어있습니다.</p>
             </div>
         </div>
     </div>
@@ -136,7 +139,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// [게임 데이터 전역 관리]
+// [게임 전역 상태]
 let p = { school:"", nickname:"", lv:1, hp:100, gold:0, exp:0, todayAns:0, lastDate:"", atk:10, collection:{}, isSecret:false };
 let isLogged = false;
 let curProb = { q: "", a: 0 };
@@ -147,14 +150,14 @@ const mTypes = [
     {n: "분할 골렘", s: "🗿", h: 150},
     {n: "소수 가시", s: "🌵", h: 60},
     {n: "소수점 드래곤", s: "🐉", h: 300},
-    {n: "무한소수 마왕", s: "👹", h: 500}
+    {n: "무한소수 마왕", s: "👺", h: 500}
 ];
 
-// [1. 로그인 및 일일 리셋]
+// [로그인 및 일일 리셋]
 window.processLogin = async function() {
     const s = document.getElementById('school-name').value.trim();
     const n = document.getElementById('user-nick').value.trim();
-    if(!s || !n) return alert("학교와 닉네임을 모두 입력하세요!");
+    if(!s || !n) return alert("학교와 닉네임을 입력하세요!");
 
     const userID = `${s}-${n}`;
     const today = new Date().toLocaleDateString();
@@ -162,10 +165,9 @@ window.processLogin = async function() {
 
     if(snap.exists()) {
         p = snap.val();
-        // 💡 중요: 날짜 체크하여 오늘 정답수 리셋
         if(!p.collection) p.collection = {};
         if(p.lastDate !== today) {
-            p.todayAns = 0;
+            p.todayAns = 0; // 💡 핵심: 날짜 다르면 정답수 0으로 초기화
             p.lastDate = today;
         }
     } else {
@@ -177,38 +179,38 @@ window.processLogin = async function() {
     document.getElementById('secret-toggle').checked = p.isSecret || false;
     updateUI();
     spawnMonster();
-    generateProblem();
-    alert(`반갑다, ${p.nickname} 용사여!`);
+    nextProblem();
 };
 
-// [2. 전투 시스템]
+// [전투 엔진]
 window.handleAttack = function() {
     if(!isLogged) return;
-    const ans = parseFloat(document.getElementById('ans-input').value);
-    if(ans === curProb.a) {
-        // 정답 시
+    const input = document.getElementById('ans-input');
+    const val = parseFloat(input.value);
+    if(Math.abs(val - curProb.a) < 0.01) {
+        // 정답!
         p.todayAns++;
-        mData.hp -= (p.atk + p.lv);
-        document.getElementById('battle-log').innerText = `💥 명중! 몬스터에게 데미지를 입혔다!`;
+        const dmg = p.atk + (p.lv * 2);
+        mData.hp -= dmg;
+        document.getElementById('battle-log').innerHTML = `<span style="color:#2e7d32">🗡️ 명중! ${dmg}의 피해를 입혔습니다!</span>`;
         
         if(mData.hp <= 0) {
-            // 처치 시
-            const mName = document.getElementById('m-name').innerText;
-            p.collection[mName] = (p.collection[mName] || 0) + 1;
-            p.gold += (10 * p.lv);
-            p.exp += 25;
-            if(p.exp >= 100) { p.lv++; p.exp = 0; alert("🎉 레벨 업! 더 강해졌습니다."); }
-            alert(`⚔️ ${mName} 처치 완료! 보상을 획득했습니다.`);
+            const mN = document.getElementById('m-name').innerText;
+            p.collection[mN] = (p.collection[mN] || 0) + 1;
+            p.gold += (p.lv * 10);
+            p.exp += 30;
+            if(p.exp >= 100) { p.lv++; p.exp = 0; alert("🎉 레벨 업! 더 강력해졌습니다."); }
+            alert(`⚔️ ${mN}을(를) 물리쳤습니다!`);
             spawnMonster();
         }
-        generateProblem();
+        nextProblem();
     } else {
-        // 오답 시
-        p.hp -= 5;
-        document.getElementById('battle-log').innerText = `😭 오답! 마법 반동으로 체력이 깎였다...`;
-        if(p.hp <= 0) { p.hp = 20; alert("😵 기절했습니다! 마을에서 부활합니다."); showScreen('shop'); }
+        // 오답!
+        p.hp -= 10;
+        document.getElementById('battle-log').innerHTML = `<span style="color:#d32f2f">😭 오답! 몬스터의 반격으로 체력이 10 줄었습니다.</span>`;
+        if(p.hp <= 0) { p.hp = 30; alert("😵 기절하여 마을(상점)로 후송되었습니다."); showScreen('shop'); }
     }
-    document.getElementById('ans-input').value = "";
+    input.value = "";
     updateUI();
     saveData();
 };
@@ -217,101 +219,79 @@ function spawnMonster() {
     const m = mTypes[Math.floor(Math.random() * mTypes.length)];
     document.getElementById('m-name').innerText = m.n;
     document.getElementById('m-sprite').innerText = m.s;
-    mData.hp = m.h + (p.lv * 5);
+    mData.hp = m.h + (p.lv * 10);
     mData.maxHp = mData.hp;
 }
 
-function generateProblem() {
-    const a = (Math.random() * 9 + 1).toFixed(1);
-    const b = (Math.random() * 3 + 1).toFixed(1);
-    curProb.q = `${(a*b).toFixed(2)} ÷ ${b}`;
+function nextProblem() {
+    const a = (Math.random() * 8 + 1).toFixed(1);
+    const b = (Math.random() * 4 + 1).toFixed(1);
+    curProb.q = `${(a * b).toFixed(2)} ÷ ${b}`;
     curProb.a = parseFloat(a);
     document.getElementById('p-text').innerText = curProb.q;
 }
 
-// [3. 랭킹 시스템 - TOP 50 최적화]
-window.switchRank = function(tab) {
-    document.getElementById('rank-p').classList.toggle('hidden', tab !== 'p');
-    document.getElementById('rank-d').classList.toggle('hidden', tab !== 'd');
-    document.getElementById('rank-s').classList.toggle('hidden', tab !== 's');
+// [랭킹 & 탭 엔진]
+window.switchRank = function(t) {
+    document.getElementById('rank-p').classList.toggle('hidden', t !== 'p');
+    document.getElementById('rank-d').classList.toggle('hidden', t !== 'd');
+    document.getElementById('rank-s').classList.toggle('hidden', t !== 's');
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
-    
-    if(tab === 'p') renderPersonal();
-    else if(tab === 'd') renderDaily();
-    else renderSchool();
+    document.getElementById('tab-' + t).classList.add('active');
+    if(t==='p') renderP(); else if(t==='d') renderD(); else renderS();
 };
 
-async function renderPersonal() {
-    const el = document.getElementById('rank-p');
-    el.innerHTML = "로딩 중...";
+async function renderP() {
+    const el = document.getElementById('rank-p'); el.innerHTML = "로딩 중...";
     const q = query(ref(db, 'players'), orderByChild('lv'), limitToLast(50));
-    const snap = await get(q);
-    let list = [];
-    snap.forEach(c => list.push(c.val()));
+    const snap = await get(q); let list = []; snap.forEach(c => list.push(c.val()));
     list.sort((a,b) => b.lv - a.lv);
-    el.innerHTML = list.map((u, i) => `
-        <div class="card">
-            <span><b>${i+1}위</b> ${u.isSecret ? '비밀용사' : u.school + '-' + u.nickname}</span>
-            <b>LV.${u.lv}</b>
-        </div>
-    `).join('');
+    el.innerHTML = list.map((u,i)=>`<div class="card"><span><b>${i+1}위</b> ${u.isSecret?'비밀용사':u.school+'-'+u.nickname}</span><b>LV.${u.lv}</b></div>`).join('');
 }
 
-async function renderDaily() {
-    const el = document.getElementById('rank-d');
-    el.innerHTML = "열기 측정 중...";
+async function renderD() {
+    const el = document.getElementById('rank-d'); el.innerHTML = "오늘의 열기 로딩 중...";
     const today = new Date().toLocaleDateString();
     const q = query(ref(db, 'players'), orderByChild('todayAns'), limitToLast(50));
-    const snap = await get(q);
-    let list = [];
-    snap.forEach(c => {
-        const u = c.val();
-        if(u.lastDate === today && u.todayAns > 0) list.push(u);
-    });
+    const snap = await get(q); let list = [];
+    snap.forEach(c => { const u = c.val(); if(u.lastDate === today && u.todayAns > 0) list.push(u); });
     list.sort((a,b) => b.todayAns - a.todayAns);
-    el.innerHTML = list.map((u, i) => `
-        <div class="card">
-            <span><b>🔥 ${i+1}위</b> ${u.isSecret ? '비밀용사' : u.nickname}</span>
-            <b>${u.todayAns}개</b>
-        </div>
-    `).join('');
+    el.innerHTML = list.map((u,i)=>`<div class="card"><span><b>🔥 ${i+1}위</b> ${u.isSecret?'비밀용사':u.nickname}</span><b>${u.todayAns}개</b></div>`).join('');
 }
 
-async function renderSchool() {
-    const el = document.getElementById('rank-s');
-    el.innerHTML = "자부심 계산 중...";
-    const snap = await get(ref(db, 'players'));
-    const schools = {};
-    snap.forEach(c => {
-        const u = c.val();
-        schools[u.school] = (schools[u.school] || 0) + u.lv;
-    });
-    const sorted = Object.entries(schools).sort((a,b) => b[1] - a[1]).slice(0, 30);
-    el.innerHTML = sorted.map(([name, score], i) => `
-        <div class="card"><span><b>${i+1}위</b> ${name}</span><b>${score} 점</b></div>
-    `).join('');
+async function renderS() {
+    const el = document.getElementById('rank-s'); el.innerHTML = "학교 자부심 계산 중...";
+    const snap = await get(ref(db, 'players')); const schools = {};
+    snap.forEach(c => { const u = c.val(); schools[u.school] = (schools[u.school]||0) + u.lv; });
+    const sorted = Object.entries(schools).sort((a,b)=>b[1]-a[1]).slice(0, 30);
+    el.innerHTML = sorted.map(([n,s],i)=>`<div class="card"><span><b>${i+1}위</b> ${n}</span><b>${s} LV</b></div>`).join('');
 }
 
-// [4. 유틸리티 및 UI]
+// [상점 & 도감 & 유틸]
+window.buyItem = function(type, price) {
+    if(p.gold < price) return alert("골드가 부족해!");
+    p.gold -= price;
+    if(type === 'exp') { p.exp += 50; if(p.exp>=100){p.lv++; p.exp=0;} alert("경험치를 흡수했습니다!"); }
+    if(type === 'hp') { p.hp = Math.min(100, p.hp + 50); alert("체력이 회복되었습니다!"); }
+    if(type === 'atk') { p.atk += 5; alert("공격력이 영구적으로 상승했습니다!"); }
+    updateUI(); saveData();
+};
+
 function updateUI() {
     document.getElementById('disp-nick').innerText = p.nickname;
     document.getElementById('disp-lv').innerText = p.lv;
     document.getElementById('disp-gold').innerText = p.gold;
     document.getElementById('disp-hp').innerText = p.hp;
+    document.getElementById('disp-exp').innerText = p.exp;
     document.getElementById('disp-today').innerText = p.todayAns || 0;
-    
-    // 바 애니메이션
     document.getElementById('hp-fill-ui').style.width = p.hp + "%";
     document.getElementById('m-hp-fill').style.width = (mData.hp / mData.maxHp * 100) + "%";
     
-    // 도감 렌더링
+    // 도감 업데이트
     const cl = document.getElementById('coll-list');
     const items = Object.entries(p.collection || {});
     if(items.length > 0) {
-        cl.innerHTML = items.map(([name, count]) => `
-            <div class="card" style="font-size:0.85em;"><span>${name}</span> <b>${count}마리</b></div>
-        `).join('');
+        cl.innerHTML = items.map(([n, c]) => `<div class="card" style="font-size:0.85em;"><span>${n}</span><b>${c}마리</b></div>`).join('');
     }
 }
 
@@ -320,17 +300,7 @@ window.showScreen = function(s) {
     document.getElementById('screen-rank').classList.toggle('hidden', s !== 'rank');
     document.getElementById('screen-shop').classList.toggle('hidden', s !== 'shop');
     document.getElementById('screen-collection').classList.toggle('hidden', s !== 'collection');
-    if(s === 'rank') renderPersonal();
-};
-
-window.buyItem = function(type, price) {
-    if(p.gold < price) return alert("골드가 부족합니다!");
-    p.gold -= price;
-    if(type === 'exp') { p.exp += 50; if(p.exp>=100){p.lv++; p.exp=0;} alert("경험치가 올랐습니다!"); }
-    if(type === 'hp') { p.hp = Math.min(100, p.hp + 50); alert("체력이 회복되었습니다!"); }
-    if(type === 'atk') { p.atk += 5; alert("공격력이 영구 상승했습니다!"); }
-    updateUI();
-    saveData();
+    if(s === 'rank') renderP();
 };
 
 function saveData() {
