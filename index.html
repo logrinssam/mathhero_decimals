@@ -109,7 +109,7 @@
             <h2 style="text-align:center;">🏆 전국 용사 순위 🏆</h2>
             <div class="rank-tabs">
                 <button class="tab-btn active" id="tab-personal" onclick="window.switchRankTab('personal')">👤 개인 TOP 50</button>
-                <button class="tab-btn" id="tab-daily" onclick="window.switchRankTab('daily')">🔥 오늘 정답왕</button>
+                <button class="tab-btn" id="tab-daily" onclick="window.switchRankTab('daily')">🔥 정답왕 TOP 10</button>
                 <button class="tab-btn" id="tab-school" onclick="window.switchRankTab('school')">🏫 학교 연합</button>
             </div>
             <div id="rank-list"></div>
@@ -286,7 +286,7 @@ window.buyItem=function(_0x1a){
     }else alert("❌ 골드가 부족합니다!");
 };
 
-// 💡 [기능] 개인 랭킹 TOP 50 확대
+// 💡 [패치] 개인 랭킹 TOP 50
 window.renderRank=async function(){
     const _0xRnk=document.getElementById('rank-list'); _0xRnk.innerHTML="<p>로딩 중...</p>";
     try{
@@ -301,12 +301,12 @@ window.renderRank=async function(){
     }catch(_0xErr){_0xRnk.innerHTML="<p>서버 연결 실패</p>"}
 };
 
-// 💡 [기능] 오늘의 정답왕 랭킹
+// 💡 [패치] 오늘의 정답왕 TOP 10으로 축소
 window.renderDailyRank=async function(){
     const _0xDRnk=document.getElementById('daily-rank-list'); _0xDRnk.innerHTML="<p>집계 중...</p>";
     try{
         const _0xTd=new Date().toLocaleDateString();
-        const _0xQry=_0x1f(_0x1c(_0xdb,'players'),_0x2a('todayAns'),_0x2b(50));
+        const _0xQry=_0x1f(_0x1c(_0xdb,'players'),_0x2a('todayAns'),_0x2b(10)); // 👈 TOP 10으로 변경 완료!
         const _0xSnp=await _0x1e(_0xQry); let _0xLst=[];
         _0xSnp.forEach(_0xCh=>{ const _0xP=_0xCh.val(); if(_0xP.lastDate===_0xTd && _0xP.todayAns>0)_0xLst.push(_0xP); });
         _0xLst.sort((_0xA,_0xB)=>_0xB.todayAns-_0xA.todayAns);
@@ -317,13 +317,13 @@ window.renderDailyRank=async function(){
     }catch(_0xErr){_0xDRnk.innerHTML="<p>서버 연결 실패</p>"}
 };
 
-// 💡 [기능] 학교 연합 랭킹
+// 💡 [패치] 학교 연합 랭킹 TOP 30으로 확대
 window.renderSchoolRank=async function(){
     const _0xSRnk=document.getElementById('school-rank-list'); _0xSRnk.innerHTML="<p>집계 중...</p>";
     try{
         const _0xSSnp=await _0x1e(_0x1c(_0xdb,'players')); const _0xTot={};
         _0xSSnp.forEach(_0xSC=>{ const _0xSP=_0xSC.val(); if(_0xSP.school)_0xTot[_0xSP.school]=(_0xTot[_0xSP.school]||0)+(_0xSP.lv||0) });
-        const _0xSrt=Object.entries(_0xTot).sort((_0xA,_0xB)=>_0xB[1]-_0xA[1]).slice(0,20);
+        const _0xSrt=Object.entries(_0xTot).sort((_0xA,_0xB)=>_0xB[1]-_0xA[1]).slice(0,30); // 👈 TOP 30으로 변경 완료!
         _0xSRnk.innerHTML=_0xSrt.map(([_0xSN,_0xSL],_0xSI)=>`<div class="card"><span><b>${_0xSI+1}위</b>. ${_0xSN}</span><b style="color:var(--a);">${_0xSL} LV</b></div>`).join('')
     }catch(_0xSErr){_0xSRnk.innerHTML="<p>서버 연결 실패</p>"}
 };
