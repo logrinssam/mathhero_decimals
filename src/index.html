@@ -175,7 +175,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 💡 [버그 수정 1] 기기 상관없이 날짜를 'YYYY-MM-DD'로 강제 고정!
+// 날짜 포맷 강제 고정
 function getToday() {
     const d = new Date();
     const year = d.getFullYear();
@@ -252,7 +252,7 @@ window.processLogin = async function() {
     const userId = `${school}-${nick}`;
     try {
         const snap = await get(ref(db, 'players/' + userId));
-        const today = getToday(); // 💡 [수정] 통일된 오늘 날짜 가져오기
+        const today = getToday();
         
         if(snap.exists()) {
             gameState.player = snap.val();
@@ -296,15 +296,15 @@ function saveData() {
     
     const userId = `${p.school}-${p.nickname}`;
     
-    // 💡 [버그 수정 2] 리더보드 폴더에도 동시 저장하여 랭킹판에 즉각 반영!
+    // 💡 [버그 수정] 파이어베이스 검증 오류를 막기 위한 필수 스탯 강제 주입
     set(ref(db, 'players/' + userId), p);
     set(ref(db, 'leaderboard/' + userId), {
-        lv: p.lv,
-        todayAns: p.todayAns,
-        school: p.school,
-        nickname: p.nickname,
-        lastDate: p.lastDate,
-        isSecret: p.isSecret
+        lv: p.lv || 1,
+        todayAns: p.todayAns || 0,
+        school: p.school || "",
+        nickname: p.nickname || "",
+        lastDate: p.lastDate || getToday(),
+        isSecret: p.isSecret === false ? false : true  // 무조건 boolean 값 보장!
     });
 }
 
@@ -317,7 +317,6 @@ function logMessage(msg) {
 window.handleAttack = function() {
     if(!gameState.isLoggedIn) return;
     
-    // 🛡️ 매크로 방어: 0.4초 미만 공격 무효화 (초인적인 속도 허용!)
     const now = Date.now();
     if(now - gameState.lastAttackTime < 400) { alert("🤖 경고: 인간의 한계를 넘었습니다! (매크로 의심)"); gameState.player.curCombo = 0; updateUI(); return; }
     gameState.lastAttackTime = now;
@@ -362,17 +361,15 @@ window.handleAttack = function() {
     saveData(); 
 };
 
-// 💡 1~20레벨 완벽 난이도 분배 (초등 6학년 과정)
+// 💡 1~20레벨 완벽 난이도 분배
 function generateProblem() {
     const lv = gameState.player.lv;
     let divisor = Math.floor(Math.random() * 8) + 2; 
     let quotient;
 
     if (lv <= 20) {
-        // 1~20레벨: 소수 첫째 자리 (1.1 ~ 9.9)
         quotient = (Math.floor(Math.random() * 89) + 11) / 10;
     } else {
-        // 21레벨 이상: 소수 둘째 자리 (1.01 ~ 9.99)
         quotient = (Math.floor(Math.random() * 899) + 101) / 100;
     }
     
@@ -482,12 +479,19 @@ window.switchRankTab = async function(tabName) {
     } 
     else if(tabName === 'daily') {
         const dailyList = document.getElementById('daily-rank-list'); dailyList.innerHTML = "<p>집계 중...</p>";
-        const today = getToday(); // 💡 [수정] 통일된 오늘 날짜 가져오기
-        // 💡 1만 명 트래픽 감안: 1000명 정도를 불러온 후 오늘 정답자 필터링
-        const snap = await get(query(ref(db, 'leaderboard'), orderByChild('todayAns'), limitToLast(1000)));
-        let list = []; snap.forEach(c => { const p = c.val(); if(p.lastDate === today && p.todayAns > 0) list.push(p); });
+        const today = getToday(); 
+        
+        // 💡 [핵심 패치] '어제 유령 데이터'를 무시하고 서버의 전체 리더보드를 통째로 불러와서 브라우저가 걸러냅니다!
+        const snap = await get(ref(db, 'leaderboard'));
+        let list = []; 
+        snap.forEach(c => { 
+            const p = c.val(); 
+            if(p.lastDate === today && p.todayAns > 0) list.push(p); 
+        });
+        
         list.sort((a,b) => b.todayAns - a.todayAns);
         list = list.slice(0, 10);
+        
         dailyList.innerHTML = list.length > 0 ? list.map((p, i) => {
             let nick = p.nickname; if(p.isSecret !== false) nick = nick.length > 2 ? nick[0] + "★".repeat(nick.length - 2) + nick[nick.length - 1] : nick[0] + "★";
             return `<div class="card"><span><b>🔥 ${i+1}위</b>. ${nick}</span><b style="color:var(--a);">${p.todayAns}개</b></div>`;
