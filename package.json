@@ -1,0 +1,13 @@
+{
+  "name": "division-game",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:light": "node scripts/build.mjs --light",
+    "preview": "npx --yes serve . -l 5500",
+    "prepare:push": "npm run build"
+  },
+  "devDependencies": {
+    "javascript-obfuscator": "^4.1.1"
+  }
+}
