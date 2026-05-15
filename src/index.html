@@ -274,6 +274,7 @@ window.processLogin = async function() {
         document.getElementById('secret-toggle').checked = gameState.player.isSecret;
         
         updateUI(); spawnMonster(); generateProblem();
+        saveData(); //
     } catch(e) { console.error(e); alert("연결 실패! 인터넷 환경을 확인하세요."); }
 };
 
