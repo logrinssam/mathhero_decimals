@@ -1,6 +1,5 @@
 <!-- 소스 파일: 수정 후 npm run build → 루트 index.html 을 GitHub에 푸시 -->
 <!DOCTYPE html>
-<!-- 배포용 자동 생성 (npm run build). 수정은 src/index.html -->
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -162,7 +161,453 @@ document.addEventListener('keydown', function(e) {
 <div id="footer">made by 로그린쌤</div>
 
 <script type="module">
-const _0xc85556=_0x1016;(function(_0x484b88,_0x332f82){const _0x219147=_0x1016,_0x240ce3=_0x484b88();while(!![]){try{const _0x195135=parseInt(_0x219147(0x144))/0x1*(-parseInt(_0x219147(0xf8))/0x2)+-parseInt(_0x219147(0x1f9))/0x3*(-parseInt(_0x219147(0x15c))/0x4)+-parseInt(_0x219147(0x109))/0x5*(-parseInt(_0x219147(0x129))/0x6)+parseInt(_0x219147(0x136))/0x7+parseInt(_0x219147(0x1bb))/0x8+parseInt(_0x219147(0x193))/0x9*(parseInt(_0x219147(0x12a))/0xa)+parseInt(_0x219147(0x1bd))/0xb*(-parseInt(_0x219147(0x1aa))/0xc);if(_0x195135===_0x332f82)break;else _0x240ce3['push'](_0x240ce3['shift']());}catch(_0x5f104c){_0x240ce3['push'](_0x240ce3['shift']());}}}(_0x2132,0x6f9a2));import{initializeApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';import{initializeAppCheck,ReCaptchaV3Provider}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js';import{getDatabase,ref,get,query,orderByChild,limitToLast,onValue,update}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';const RECAPTCHA_SITE_KEY='',firebaseConfig={'apiKey':'AIzaSyDU'+_0xc85556(0x184)+_0xc85556(0xe5)+'gHqX92xj'+_0xc85556(0x16f),'authDomain':'division'+'-of-frac'+_0xc85556(0x189)+_0xc85556(0x1ec)+'p.com','projectId':'division'+_0xc85556(0x1dd)+_0xc85556(0x1c4),'databaseURL':_0xc85556(0x14b)+_0xc85556(0x1ad)+'-of-frac'+'tions-de'+_0xc85556(0x13f)+'db.asia-'+_0xc85556(0x11b)+'t1.fireb'+'asedatab'+'ase.app/','storageBucket':'division'+_0xc85556(0x1dd)+_0xc85556(0x189)+'rebasest'+_0xc85556(0x121)+'p','messagingSenderId':'54939858'+_0xc85556(0x1fa),'appId':_0xc85556(0x12e)+'586980:w'+_0xc85556(0x12f)+_0xc85556(0x17c)+_0xc85556(0x154)+'1'},app=initializeApp(firebaseConfig);RECAPTCHA_SITE_KEY&&initializeAppCheck(app,{'provider':new ReCaptchaV3Provider(RECAPTCHA_SITE_KEY),'isTokenAutoRefreshEnabled':!![]});const db=getDatabase(app),ALLOWED_ATK=new Set([0xa,...[0xf,0x19,0x37,0x6e,0x12c,0x258,0x3e8,0x5dc,0x3,0x7,0xc,0x16,0x28,0x3c,0x55,0x78,0x7,0x9,0xc,0x10,0x16,0x32,0x64,0xc8]]),shopItems=[{'type':'w','icon':'🪵','name':'연습용\x20목검','desc':'시작보다\x20묵직한'+'\x20타격감','price':0x64,'val':0xf},{'type':'w','icon':'🗡️','name':'소수점\x20단검','desc':_0xc85556(0xec)+'파고드는\x20날카로'+'움','price':0x12c,'val':0x19},{'type':'w','icon':'⚔️','name':_0xc85556(0xe3),'desc':'몬스터를\x20정확히'+_0xc85556(0x1d4),'price':0x320,'val':0x37},{'type':'w','icon':'🔱','name':_0xc85556(0x178),'desc':'높은\x20데미지를\x20'+'자랑하는\x20부의\x20'+'상징','price':0x708,'val':0x6e},{'type':'w','icon':'⚡','name':'진리검:\x20제로','desc':'나눗셈의\x20끝을\x20'+_0xc85556(0xfc),'price':0x1194,'val':0x12c},{'type':'w','icon':'🐉','name':'드래곤의\x20발톱검','desc':'드래곤의\x20비늘도'+'\x20뚫어버리는\x20명'+'검','price':0x3a98,'val':0x258},{'type':'w','icon':'🌋','name':'마왕\x20처단자','desc':'마왕을\x20베기\x20위'+'해\x20벼려낸\x20검','price':0x88b8,'val':0x3e8},{'type':'w','icon':'🌌','name':_0xc85556(0x159),'desc':'우주를\x20반으로\x20'+'가르는\x20절대\x20무'+'기','price':0x11170,'val':0x5dc},{'type':'a','icon':'👕','name':'질긴\x20가죽옷','desc':'실수해도\x20툭툭\x20'+'일어날\x20내구성','price':0x96,'val':0x3},{'type':'a','icon':'🥋','name':'집중의\x20예복','desc':'연산\x20집중력을\x20'+'높여주는\x20옷','price':0x1c2,'val':0x7},{'type':'a','icon':'🛡️','name':'사슬\x20갑옷','desc':_0xc85556(0x140)+_0xc85556(0x19c),'price':0x3e8,'val':0xc},{'type':'a','icon':'🧥','name':'기사의\x20판금','desc':_0xc85556(0x171)+'키는\x20기사의\x20자'+'존심','price':0x9c4,'val':0x16},{'type':'a','icon':'💎','name':_0xc85556(0x175),'desc':_0xc85556(0x168)+'\x20가진\x20용사의\x20'+'증표','price':0x157c,'val':0x28},{'type':'a','icon':'🐉','name':'드래곤\x20본\x20아머','desc':'드래곤의\x20뼈로\x20'+_0xc85556(0xe0)+'구','price':0x2ee0,'val':0x3c},{'type':'a','icon':'🧛','name':'마왕의\x20망토','desc':'어둠의\x20힘으로\x20'+_0xc85556(0x1c5),'price':0x6d60,'val':0x55},{'type':'a','icon':'✨','name':_0xc85556(0x1da),'desc':_0xc85556(0x1cf)+_0xc85556(0x18f)+'같은\x20기분','price':0xea60,'val':0x78},{'type':'x','icon':'⌚','name':_0xc85556(0x1c7),'desc':_0xc85556(0x18b)+_0xc85556(0x14c),'price':0xc8,'val':0x7},{'type':'x','icon':'💍','name':'은빛\x20반지','desc':'차분하게\x20점을\x20'+'찍을\x20수\x20있는\x20'+'시간','price':0x258,'val':0x9},{'type':'x','icon':'📿','name':_0xc85556(0x172)+'이','desc':'느려도\x20괜찮아요'+_0xc85556(0x17b),'price':0x514,'val':0xc},{'type':'x','icon':'🧭','name':'차원의\x20나침반','desc':'시간이\x20멈춘\x20듯'+_0xc85556(0x1a2),'price':0xaf0,'val':0x10},{'type':'x','icon':'⌛','name':'시간의\x20지배자','desc':'22초\x20안에만\x20'+'풀면\x20무조건\x202'+'배!','price':0x1964,'val':0x16},{'type':'e','icon':'📜','name':'학자의\x20두루마리','desc':_0xc85556(0x127)+_0xc85556(0x1f7)+'!','price':0x1f40,'val':0x32},{'type':'e','icon':'🎓','name':_0xc85556(0xf3),'desc':_0xc85556(0x13b)+_0xc85556(0x16c)+'늘려준다','price':0x61a8,'val':0x64},{'type':'e','icon':'🏆','name':'깨달음의\x20성배','desc':'경험치\x20획득량\x20'+_0xc85556(0xfb)+_0xc85556(0x1ba),'price':0xd6d8,'val':0xc8}],monsterData=[{'name':'소수점\x20슬라임','sprite':'💧','desc':_0xc85556(0xf7)+_0xc85556(0x191),'reqLv':0x1},{'name':'나눗셈\x20고스트','sprite':'👻','desc':'몫의\x200을\x20찾는'+_0xc85556(0x112)+_0xc85556(0xe2),'reqLv':0x1},{'name':_0xc85556(0x1ab),'sprite':'🗿','desc':'자릿수가\x20많아도'+_0xc85556(0x1b4)+'요.','reqLv':0x1},{'name':_0xc85556(0x1ce),'sprite':'🌵','desc':_0xc85556(0x158)+_0xc85556(0x118),'reqLv':0x1},{'name':_0xc85556(0x128),'sprite':'🐲','desc':'나눗셈의\x20정점에'+_0xc85556(0x1c3)+_0xc85556(0x1b6),'reqLv':0x32},{'name':_0xc85556(0x1cb),'sprite':'😈','desc':'최상위권\x20용사만'+'\x20상대할\x20수\x20있'+_0xc85556(0x145),'reqLv':0x64},{'name':_0xc85556(0x200)+'제로','sprite':'🌌','desc':_0xc85556(0x1a5)+_0xc85556(0x14d)+_0xc85556(0x180),'reqLv':0xc8}];let gameState={'player':{'nickname':'','school':'','lv':0x1,'hp':0x64,'maxHp':0x64,'gold':0x0,'exp':0x0,'maxExp':0x32,'atk':0xa,'comboRate':0x0,'bonusTime':0x5,'expBonus':0x0,'curCombo':0x0,'isSecret':!![],'weapon':_0xc85556(0x19a),'armor':_0xc85556(0x1fe),'acc':'없음','expItem':'없음','collection':{},'todayAns':0x0,'lastDate':''},'currentMonster':{'name':'','sprite':'','hp':0x0,'maxHp':0x0},'currentProblem':{'q':'','a':0x0,'start':0x0},'isLoggedIn':![],'lastAttackTime':0x0,'saveBaseline':null,'lastSaveAt':0x0},saveDataTimer=null;function maskNicknamePlain(_0x1f9355){const _0x28155d=_0xc85556,_0x4af974=String(_0x1f9355||'');if(_0x4af974[_0x28155d(0x201)]<=0x2)return _0x4af974[_0x28155d(0x201)]?_0x4af974[0x0]+'★':'★';return _0x4af974[0x0]+'★'[_0x28155d(0x1bc)](_0x4af974['length']-0x2)+_0x4af974[_0x4af974['length']-0x1];}function leaderboardNicknameDisplay(_0x2e9483,_0x3c1d9a){if(_0x3c1d9a===![])return _0x2e9483||'';const _0x170c22=String(_0x2e9483||'');if(_0x170c22['includes']('★'))return _0x170c22;return maskNicknamePlain(_0x170c22);}function isValidLoginNick(_0x481b8b){const _0x482101=_0xc85556;if(!_0x481b8b||_0x481b8b[_0x482101(0x201)]>0x14)return![];return!/[.#$\[\]/\\]/['test'](_0x481b8b);}function snapshotBaseline(_0x33d006){const _0x9346a2=_0xc85556;return{'lv':_0x33d006['lv']||0x1,'todayAns':_0x33d006[_0x9346a2(0x18c)]||0x0,'gold':_0x33d006['gold']||0x0,'atk':_0x33d006['atk']||0xa};}function sanitizePlayer(_0x30638a){const _0x1ce6c2=_0xc85556;_0x30638a['lv']=Math[_0x1ce6c2(0x139)](0x1,Math['min'](0x270f,Math['floor'](_0x30638a['lv']||0x1))),_0x30638a['gold']=Math[_0x1ce6c2(0x139)](0x0,Math[_0x1ce6c2(0x157)](0x3b9aca00,Math[_0x1ce6c2(0x18e)](_0x30638a[_0x1ce6c2(0x122)]||0x0))),_0x30638a['hp']=Math['max'](0x0,Math['min'](0x7a120,Math[_0x1ce6c2(0x18e)](_0x30638a['hp']||0x0))),_0x30638a[_0x1ce6c2(0x13d)]=Math[_0x1ce6c2(0x139)](0xa,Math[_0x1ce6c2(0x157)](0x7a120,Math['floor'](_0x30638a[_0x1ce6c2(0x13d)]||0x64))),_0x30638a['exp']=Math['max'](0x0,Math[_0x1ce6c2(0x157)](0x186a0,Math[_0x1ce6c2(0x18e)](_0x30638a['exp']||0x0))),_0x30638a['maxExp']=Math['max'](0x1,Math['min'](0x186a0,Math['floor'](_0x30638a['maxExp']||0x32))),_0x30638a[_0x1ce6c2(0xe8)]=Math[_0x1ce6c2(0x139)](0x1,Math['min'](0x60e,Math[_0x1ce6c2(0x18e)](_0x30638a[_0x1ce6c2(0xe8)]||0xa)));if(!ALLOWED_ATK[_0x1ce6c2(0x147)](_0x30638a[_0x1ce6c2(0xe8)]))_0x30638a[_0x1ce6c2(0xe8)]=0xa;_0x30638a['comboRat'+'e']=Math[_0x1ce6c2(0x139)](0x0,Math['min'](0x78,Math['floor'](_0x30638a[_0x1ce6c2(0x131)+'e']||0x0))),_0x30638a[_0x1ce6c2(0x1b2)+'e']=Math['max'](0x1,Math[_0x1ce6c2(0x157)](0x16,Math[_0x1ce6c2(0x18e)](_0x30638a[_0x1ce6c2(0x1b2)+'e']||0x5))),_0x30638a[_0x1ce6c2(0x1cc)]=Math['max'](0x0,Math[_0x1ce6c2(0x157)](0xc8,Math[_0x1ce6c2(0x18e)](_0x30638a['expBonus']||0x0))),_0x30638a['todayAns']=Math[_0x1ce6c2(0x139)](0x0,Math[_0x1ce6c2(0x157)](0x186a0,Math[_0x1ce6c2(0x18e)](_0x30638a[_0x1ce6c2(0x18c)]||0x0))),_0x30638a[_0x1ce6c2(0x167)]=Math[_0x1ce6c2(0x139)](0x0,Math['min'](0xf423f,Math['floor'](_0x30638a[_0x1ce6c2(0x167)]||0x0)));if(!_0x30638a[_0x1ce6c2(0x1c8)+'on']||typeof _0x30638a[_0x1ce6c2(0x1c8)+'on']!==_0x1ce6c2(0x137))_0x30638a[_0x1ce6c2(0x1c8)+'on']={};return _0x30638a;}function enforceSaveLimits(_0x3e0e96){const _0xccc66e=_0xc85556,_0x4b02bb=gameState[_0xccc66e(0x1b0)+'line'];if(!_0x4b02bb)return!![];_0x3e0e96['lv']>_0x4b02bb['lv']+0x1&&(_0x3e0e96['lv']=_0x4b02bb['lv']+0x1);if(_0x3e0e96['lv']<_0x4b02bb['lv'])_0x3e0e96['lv']=_0x4b02bb['lv'];if(_0x3e0e96['todayAns']>_0x4b02bb[_0xccc66e(0x18c)]+0x3)_0x3e0e96[_0xccc66e(0x18c)]=_0x4b02bb['todayAns']+0x3;if(_0x3e0e96[_0xccc66e(0x18c)]<_0x4b02bb[_0xccc66e(0x18c)])_0x3e0e96[_0xccc66e(0x18c)]=_0x4b02bb[_0xccc66e(0x18c)];if(_0x3e0e96['gold']>_0x4b02bb['gold']+0x1770)_0x3e0e96[_0xccc66e(0x122)]=_0x4b02bb[_0xccc66e(0x122)]+0x1770;if(_0x3e0e96['gold']<_0x4b02bb['gold']-0x11170)_0x3e0e96['gold']=Math['max'](0x0,_0x4b02bb['gold']-0x11170);return!![];}function _0x1016(_0x1532a5,_0x92a192){_0x1532a5=_0x1532a5-0xe0;const _0x2132e5=_0x2132();let _0x101683=_0x2132e5[_0x1532a5];if(_0x1016['lTVPvO']===undefined){var _0x4f43c7=function(_0xb8f46e){const _0x455c90='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';let _0x1f9355='',_0x4af974='';for(let _0x2e9483=0x0,_0x3c1d9a,_0x170c22,_0x481b8b=0x0;_0x170c22=_0xb8f46e['charAt'](_0x481b8b++);~_0x170c22&&(_0x3c1d9a=_0x2e9483%0x4?_0x3c1d9a*0x40+_0x170c22:_0x170c22,_0x2e9483++%0x4)?_0x1f9355+=String['fromCharCode'](0xff&_0x3c1d9a>>(-0x2*_0x2e9483&0x6)):0x0){_0x170c22=_0x455c90['indexOf'](_0x170c22);}for(let _0x33d006=0x0,_0x30638a=_0x1f9355['length'];_0x33d006<_0x30638a;_0x33d006++){_0x4af974+='%'+('00'+_0x1f9355['charCodeAt'](_0x33d006)['toString'](0x10))['slice'](-0x2);}return decodeURIComponent(_0x4af974);};_0x1016['ajPrii']=_0x4f43c7,_0x1016['FkgUHX']={},_0x1016['lTVPvO']=!![];}const _0x34212c=_0x2132e5[0x0],_0x43d3f7=_0x1532a5+_0x34212c,_0x4290af=_0x1016['FkgUHX'][_0x43d3f7];return!_0x4290af?(_0x101683=_0x1016['ajPrii'](_0x101683),_0x1016['FkgUHX'][_0x43d3f7]=_0x101683):_0x101683=_0x4290af,_0x101683;}function addKillSwitch(){const _0x12ce79=_0xc85556,_0x18101d=ref(db,'players/'+(gameState[_0x12ce79(0x1d3)][_0x12ce79(0xf0)]+'-'+gameState['player']['nickname']));onValue(_0x18101d,_0x22fe28=>{const _0x448648=_0x12ce79;_0x22fe28['val']()&&_0x22fe28[_0x448648(0x1a8)]()['kick']===!![]&&(alert(_0x448648(0x1ef)+_0x448648(0x11e)+'어\x20접속이\x20차단'+'되었습니다.'),location[_0x448648(0x164)]());});}window['processL'+'ogin']=async function(){const _0xeb387a=_0xc85556;let _0x238acd=document[_0xeb387a(0x16d)+_0xeb387a(0x1ca)]('school-n'+'ame')['value']['trim']()['replace'](/\s+/g,''),_0x53ce64=document['getEleme'+'ntById'](_0xeb387a(0x1be)+'k')[_0xeb387a(0x19d)][_0xeb387a(0x1e9)]();if(!_0x238acd||!_0x53ce64)return alert(_0xeb387a(0x1a4)+_0xeb387a(0x119)+'해주세요!');if(!isValidLoginNick(_0x53ce64))return alert(_0xeb387a(0x126)+_0xeb387a(0xe9)+'.\x20#\x20$\x20[\x20'+_0xeb387a(0x165)+_0xeb387a(0x130)+'니다.');if(_0x238acd[_0xeb387a(0x1ae)]('초'))_0x238acd+=_0xeb387a(0xea);else{if(!_0x238acd['endsWith'](_0xeb387a(0x169)))_0x238acd+=_0xeb387a(0x169);}const _0x40a18d=_0x238acd+'-'+_0x53ce64;try{const _0x48ed2=await get(ref(db,'players/'+_0x40a18d)),_0x1819c9=new Date()[_0xeb387a(0x1a3)+'DateStri'+'ng']();if(_0x48ed2[_0xeb387a(0x190)]()){gameState[_0xeb387a(0x1d3)]=_0x48ed2['val']();if(!gameState[_0xeb387a(0x1d3)]['collecti'+'on'])gameState[_0xeb387a(0x1d3)][_0xeb387a(0x1c8)+'on']={};gameState['player'][_0xeb387a(0x115)]!==_0x1819c9&&(gameState['player'][_0xeb387a(0x18c)]=0x0,gameState['player'][_0xeb387a(0x115)]=_0x1819c9),alert(_0xeb387a(0x15b)+'\x20'+gameState['player']['nickname']+_0xeb387a(0x114));}else gameState[_0xeb387a(0x1d3)]['school']=_0x238acd,gameState[_0xeb387a(0x1d3)]['nickname']=_0x53ce64,gameState['player']['lastDate']=_0x1819c9,alert('✨\x20새로운\x20모험'+_0xeb387a(0x181)+_0xeb387a(0x1db));sanitizePlayer(gameState['player']),gameState['saveBase'+_0xeb387a(0x1b1)]=snapshotBaseline(gameState[_0xeb387a(0x1d3)]),gameState[_0xeb387a(0x160)+'In']=!![],addKillSwitch(),document['getEleme'+_0xeb387a(0x1ca)]('game-con'+'tainer')['classLis'+'t']['remove']('is-locke'+'d'),document[_0xeb387a(0x16d)+'ntById'](_0xeb387a(0x173)+'tton')['innerTex'+'t']='접속\x20완료',document['getEleme'+'ntById']('start-bu'+_0xeb387a(0x1d9))['disabled']=!![],document['getEleme'+'ntById']('school-n'+'ame')['disabled']=!![],document['getEleme'+_0xeb387a(0x1ca)]('user-nic'+'k')[_0xeb387a(0x142)]=!![],document[_0xeb387a(0x16d)+_0xeb387a(0x1ca)]('secret-t'+_0xeb387a(0x1e1))[_0xeb387a(0x1eb)]=gameState[_0xeb387a(0x1d3)][_0xeb387a(0x1de)],updateUI(),spawnMonster(),generateProblem();}catch(_0xb27220){console[_0xeb387a(0x10e)](_0xb27220),alert(_0xeb387a(0x1df)+_0xeb387a(0x194)+_0xeb387a(0x10d));}},window[_0xc85556(0x1b3)+_0xc85556(0x1c9)]=function(){const _0x3efb79=_0xc85556;if(!gameState['isLogged'+'In'])return;gameState[_0x3efb79(0x1d3)][_0x3efb79(0x1de)]=document[_0x3efb79(0x16d)+_0x3efb79(0x1ca)]('secret-t'+_0x3efb79(0x1e1))[_0x3efb79(0x1eb)],saveData();};function saveData(){const _0xc19fc7=_0xc85556;if(!gameState[_0xc19fc7(0x160)+'In'])return;clearTimeout(saveDataTimer),saveDataTimer=setTimeout(flushSaveData,0x1f4);}function flushSaveData(){const _0x3f7e04=_0xc85556;if(!gameState[_0x3f7e04(0x160)+'In'])return;const _0x35ba8d=Date[_0x3f7e04(0x151)]();if(_0x35ba8d-gameState[_0x3f7e04(0x1e0)+'At']<0x190)return;gameState[_0x3f7e04(0x1e0)+'At']=_0x35ba8d;const _0x22e3d9=gameState['player'],_0x666a5b=_0x22e3d9['school']+'-'+_0x22e3d9['nickname'];sanitizePlayer(_0x22e3d9),enforceSaveLimits(_0x22e3d9);const _0x2dd4c1={..._0x22e3d9};delete _0x2dd4c1['kick'];const _0x3807bd={'lv':_0x22e3d9['lv'],'school':_0x22e3d9[_0x3f7e04(0xf0)],'nickname':_0x22e3d9['isSecret']!==![]?maskNicknamePlain(_0x22e3d9[_0x3f7e04(0x1b5)]):_0x22e3d9['nickname'],'todayAns':_0x22e3d9['todayAns']||0x0,'lastDate':_0x22e3d9[_0x3f7e04(0x115)],'isSecret':_0x22e3d9[_0x3f7e04(0x1de)]!==![]},_0x50cfa2={};_0x50cfa2[_0x3f7e04(0x138)+_0x666a5b]=_0x2dd4c1,_0x50cfa2['leaderbo'+_0x3f7e04(0x135)+_0x666a5b]=_0x3807bd,update(ref(db),_0x50cfa2)[_0x3f7e04(0x1e3)](()=>{const _0x18d590=_0x3f7e04;gameState[_0x18d590(0x1b0)+'line']=snapshotBaseline(_0x22e3d9);})['catch'](()=>{const _0x4768b4=_0x3f7e04;alert(_0x4768b4(0x1b8)+'니다.\x20잠시\x20후'+'\x20다시\x20시도해\x20'+'주세요.');});}window[_0xc85556(0x14e)]=saveData;function logMessage(_0x358ec9){const _0x51b319=_0xc85556,_0x1db559=document['getEleme'+'ntById'](_0x51b319(0x124)+'og');_0x1db559['innerHTM'+'L']='<div>>\x20'+_0x358ec9+'</div>'+_0x1db559[_0x51b319(0x19b)+'L'];}window['handleAt'+_0xc85556(0x17a)]=function(){const _0x5a2ec4=_0xc85556;if(!gameState[_0x5a2ec4(0x160)+'In'])return;const _0x1fe799=Date['now']();if(_0x1fe799-gameState[_0x5a2ec4(0x1ff)+_0x5a2ec4(0xff)]<0x12c){alert(_0x5a2ec4(0x170)+_0x5a2ec4(0x11d)+'다!'),gameState['player'][_0x5a2ec4(0x167)]=0x0,updateUI();return;}gameState[_0x5a2ec4(0x1ff)+'ckTime']=_0x1fe799;const _0x22b276=document[_0x5a2ec4(0x16d)+_0x5a2ec4(0x1ca)](_0x5a2ec4(0x1a9)+'nput'),_0x2a9afc=parseFloat(_0x22b276[_0x5a2ec4(0x19d)][_0x5a2ec4(0x1e9)]());if(isNaN(_0x2a9afc)){_0x22b276['value']='';return;}const _0x3a9aae=gameState['player'],_0x213b54=(Date[_0x5a2ec4(0x151)]()-gameState[_0x5a2ec4(0x1f8)+'roblem']['start'])/0x3e8,_0x4aafdb=_0x3a9aae['collecti'+'on'][gameState[_0x5a2ec4(0x1f4)+_0x5a2ec4(0x13e)][_0x5a2ec4(0x1f1)]]||0x0;if(Math[_0x5a2ec4(0xf6)](_0x2a9afc-gameState[_0x5a2ec4(0x1f8)+_0x5a2ec4(0xf2)]['a'])<0.001){_0x3a9aae[_0x5a2ec4(0x167)]++,_0x3a9aae[_0x5a2ec4(0x18c)]++;let _0xf6fea6=_0x4aafdb>=0x32?1.2:_0x4aafdb>=0x19?1.1:0x1,_0x53d4ac=Math[_0x5a2ec4(0x18e)](_0x3a9aae[_0x5a2ec4(0xe8)]*_0xf6fea6),_0x44696f=_0x213b54<=_0x3a9aae['bonusTim'+'e']?0x2:0x1;if(_0x44696f===0x2)logMessage('⚡\x20신속\x20공격!'+_0x5a2ec4(0x1d8));let _0x12d536=0x1+_0x3a9aae['curCombo']*(_0x3a9aae['comboRat'+'e']/0x64),_0x43e8b2=Math[_0x5a2ec4(0x18e)](_0x53d4ac*_0x44696f*_0x12d536);gameState['currentM'+'onster']['hp']-=_0x43e8b2,document['getEleme'+'ntById']('m-sprite')['classLis'+'t'][_0x5a2ec4(0x179)](_0x5a2ec4(0x146)+_0x5a2ec4(0x108)),setTimeout(()=>document[_0x5a2ec4(0x16d)+_0x5a2ec4(0x1ca)]('m-sprite')['classLis'+'t'][_0x5a2ec4(0x113)](_0x5a2ec4(0x146)+_0x5a2ec4(0x108)),0x190),logMessage('🗡️\x20'+_0x43e8b2+_0x5a2ec4(0x14f));if(gameState[_0x5a2ec4(0x1f4)+'onster']['hp']<=0x0)handleWin();else generateProblem();}else _0x3a9aae['curCombo']=0x0,_0x3a9aae['hp']-=0xf,document['getEleme'+'ntById'](_0x5a2ec4(0x146)+_0x5a2ec4(0x1d0))[_0x5a2ec4(0x110)+'t'][_0x5a2ec4(0x179)](_0x5a2ec4(0x16e)+_0x5a2ec4(0x1d6)),setTimeout(()=>document['getEleme'+_0x5a2ec4(0x1ca)](_0x5a2ec4(0x146)+_0x5a2ec4(0x1d0))[_0x5a2ec4(0x110)+'t']['remove'](_0x5a2ec4(0x16e)+'lash'),0x190),logMessage(_0x5a2ec4(0x1c1)+_0x5a2ec4(0x1b9)+':\x20'+gameState[_0x5a2ec4(0x1f8)+'roblem']['a']+')'),_0x3a9aae['hp']<=0x0&&(alert(_0x5a2ec4(0x196)+_0x5a2ec4(0x14a)),_0x3a9aae['hp']=0x1e),generateProblem();_0x22b276[_0x5a2ec4(0x19d)]='',updateUI(),saveData();};function generateProblem(){const _0x2a7f2f=_0xc85556,_0x3aea4e=gameState[_0x2a7f2f(0x1d3)]['lv'];let _0x6cd6d4=Math[_0x2a7f2f(0x18e)](Math[_0x2a7f2f(0xe7)]()*0x8)+0x2,_0x3e9d9f;_0x3aea4e<=0x14?_0x3e9d9f=(Math[_0x2a7f2f(0x18e)](Math[_0x2a7f2f(0xe7)]()*0x59)+0xb)/0xa:_0x3e9d9f=(Math['floor'](Math['random']()*0x383)+0x65)/0x64;let _0x520d81=parseFloat((_0x6cd6d4*_0x3e9d9f)[_0x2a7f2f(0x10f)](0x2));gameState['currentP'+'roblem']={'q':_0x520d81+'\x20÷\x20'+_0x6cd6d4+_0x2a7f2f(0x1a6),'a':_0x3e9d9f,'start':Date[_0x2a7f2f(0x151)]()},document[_0x2a7f2f(0x16d)+_0x2a7f2f(0x1ca)]('p-text')[_0x2a7f2f(0x13a)+'t']=gameState[_0x2a7f2f(0x1f8)+'roblem']['q'],document[_0x2a7f2f(0x16d)+'ntById'](_0x2a7f2f(0x1a9)+'nput')[_0x2a7f2f(0x1ed)]();}function handleWin(){const _0x5c5f70=_0xc85556,_0x3a05c1=gameState[_0x5c5f70(0x1d3)],_0x467288=_0x3a05c1['collecti'+'on'][gameState[_0x5c5f70(0x1f4)+_0x5c5f70(0x13e)][_0x5c5f70(0x1f1)]]||0x0;let _0x4e6986=Math[_0x5c5f70(0x18e)](0x32*(_0x467288>=0x32?1.1:_0x467288>=0xa?1.05:0x1)),_0x5ac201=Math[_0x5c5f70(0x18e)](0x14*(0x1+_0x3a05c1['expBonus']/0x64));_0x3a05c1[_0x5c5f70(0x122)]+=_0x4e6986,_0x3a05c1[_0x5c5f70(0x1fc)]+=_0x5ac201,_0x3a05c1[_0x5c5f70(0x1c8)+'on'][gameState['currentM'+'onster']['name']]=_0x467288+0x1,_0x3a05c1['exp']>=_0x3a05c1[_0x5c5f70(0x1e2)]&&(_0x3a05c1['lv']++,_0x3a05c1['exp']=0x0,_0x3a05c1['maxExp']=0x32+_0x3a05c1['lv']*0x5,_0x3a05c1[_0x5c5f70(0x13d)]+=0x14,_0x3a05c1['hp']=_0x3a05c1['maxHp'],alert(_0x5c5f70(0x16b)+_0x5c5f70(0x188)+_0x3a05c1['lv'])),spawnMonster(),generateProblem(),updateUI(),saveData();}function spawnMonster(){const _0x5282bc=_0xc85556,_0x2b9b4b=gameState[_0x5282bc(0x1d3)]['lv'];let _0xa34a39=monsterData[_0x5282bc(0x1ea)](_0xd4f90d=>_0x2b9b4b>=_0xd4f90d[_0x5282bc(0x15d)]);const _0x31a221=_0xa34a39[Math['floor'](Math[_0x5282bc(0xe7)]()*_0xa34a39['length'])];gameState['currentM'+_0x5282bc(0x13e)]={'name':_0x31a221[_0x5282bc(0x1f1)],'sprite':_0x31a221['sprite'],'maxHp':0x24+_0x2b9b4b*0x12+Math[_0x5282bc(0x18e)](_0x2b9b4b*_0x2b9b4b*0.012)},gameState['currentM'+'onster']['hp']=gameState['currentM'+_0x5282bc(0x13e)][_0x5282bc(0x13d)],document[_0x5282bc(0x16d)+'ntById'](_0x5282bc(0x1e6))['innerTex'+'t']=gameState[_0x5282bc(0x1f4)+_0x5282bc(0x13e)]['name'],document['getEleme'+'ntById']('m-sprite')[_0x5282bc(0x13a)+'t']=gameState['currentM'+_0x5282bc(0x13e)][_0x5282bc(0xfd)],updateUI();}function renderShop(){const _0x133f44=_0xc85556;let _0x3db920='';shopItems['forEach'](_0x599817=>{const _0x162b74=_0x1016;let _0x4450bc=_0x599817[_0x162b74(0x133)]==='w'?'tag-w':_0x599817['type']==='a'?_0x162b74(0x1e4):_0x599817[_0x162b74(0x133)]==='x'?'tag-x':_0x162b74(0x1a7),_0x5069ce=_0x599817[_0x162b74(0x133)]==='w'?'무기':_0x599817[_0x162b74(0x133)]==='a'?'방어구':_0x599817[_0x162b74(0x133)]==='x'?_0x162b74(0x153):'유물',_0x40d6fd=_0x599817[_0x162b74(0x133)]==='w'?_0x162b74(0x102)+_0x599817['val']:_0x599817[_0x162b74(0x133)]==='a'?'콤보+'+_0x599817['val']+'%':_0x599817[_0x162b74(0x133)]==='x'?_0x162b74(0xee)+_0x599817[_0x162b74(0x1a8)]+'초':_0x162b74(0xed)+_0x599817[_0x162b74(0x1a8)]+'%';_0x3db920+='<div\x20cla'+_0x162b74(0x106)+'\x22><div\x20s'+_0x162b74(0x1ee)+_0x162b74(0x1b7)+'span\x20cla'+_0x162b74(0x199)+_0x4450bc+'\x22>'+_0x5069ce+'\x20'+_0x599817[_0x162b74(0x1d5)]+('</span><'+'br><b>')+_0x599817['name']+('</b><br>'+_0x162b74(0xeb))+_0x599817['desc']+(_0x162b74(0x1cd)+'<br><b>효'+'과:\x20')+_0x40d6fd+(_0x162b74(0x103)+_0x162b74(0x15a)+_0x162b74(0x116)+_0x162b74(0x1dc)+_0x162b74(0x10b)+'le=\x22back'+'ground:#'+_0x162b74(0xf4)+'\x20onclick'+'=\x22buyIte'+_0x162b74(0x166))+_0x599817['name']+'\x27)\x22>'+_0x599817[_0x162b74(0x132)]+(_0x162b74(0x17f)+'n></div>');}),document[_0x133f44(0x16d)+_0x133f44(0x1ca)](_0x133f44(0x1f5)+'t')[_0x133f44(0x19b)+'L']=_0x3db920;}function _0x2132(){const _0x41b641=['zw5KC1DPDgG','z246y2vUDgu','C2f2zujHC2u','BgLUzq','yM9UDxnuAw0','Dg9Nz2XLu2u','ioUlUE2zQE2vMoYNGcdRP4JSHlG','BMLJA25HBwu','656y6RoKiq','zxG6mtSIpJW','7kca7j6L7jEqioYlPo2mQo2wIoYkTq','nsbiucaO7kcv64U1','io2pREUWNce','nZa3nJCYofH1uenkqq','CMvWzwf0','mJi5mdiYmJblyNzhz1K','DxnLCI1UAwm','ChvZAa','4PQG77IpioYDToUVUcdRJzqG7kkl','8j+yRsdSMktRI7uHic0X','zgLZCgXHEq','ioYeOcdSOitSHktSNzGG65oC','DgLVBNm','7l2K67o066w8ioYCOoYNGo2vNoUlPa','A25HBwu','64ky66Y0ioYlNoQZHa','y29SBgvJDgK','y3jLDa','BNrcEuLK','66Y07zwC7iAm7iIyioUNIoYzLq','zxHWqM9UDxm','pc9ZBwfSBd4','7iAm7iIyioQWGoYlNa','6RkW7l2uioY9PoUZToQWGcdRGyO','yxjLyq','C3r5Bgu','CxvLCNLtzwW','CgXHEwvY','ioUtSEU2Ho2vMoUkLcdSUBW','AwnVBG','BgfZAa','y29TyM8TDMe','ioUnSoUVUoYNGcaY67cWiq','DhrVBG','7lc97kgW7iUG7j2yioUcOoQWNoYyTW','7zwP64Ui64UKiq','iMfJDgLVBI0','lw9MlwzYywm','AxntzwnYzxq','7jEW6RkWioYlPo2mQceG7j24','BgfZDfnHDMu','B2DNBgu','Bwf4rxHW','DgHLBG','DgfNlwe','yNv5sxrLBq','Bs1Uyw1L','yxrRlxzHBa','AM9PBG','DhjPBq','zMLSDgvY','y2HLy2TLza','CMvIyxnLyxa','zM9JDxm','DhLSzt0IzMW','8j+AQYdRUytSOjxSG4hSOihSNBGG','pha+7kEr6RoeioYKKs4','BMfTzq','CMvJDgLVBJO','DgLTzs12ywW','y3vYCMvUDe0','C2HVCc1SAxm','Bs1OCc1MAwW','7jY866gCioQ0KEYgJsdSHlhSNQu','y3vYCMvUDfa','m2HZuxLXza','nJK4ma','iJ48C3bHBJ4','zxHW','B24Tz3jPza','7y+j7iob67o1','BgfZDef0Dge','7iUC6Ro17j2yioYNGoUWSoYEKca','BgvUz3rO','66Em65oGioYGIoUmGcdRSkNSLRq','zgvZyW','64Ui64UKlG','6Rcv7lkGioU2Ho2vOoUpHa','lI48l3a+','n0jguvfwsw0','C2XPy2u','CMfUzg9T','yxrR','moYEKcdSNBtTLzJSNBtRQBaG','65oX7zwz6Rwq','phnTywXSpG','7iAm7iIy7kcqioYcRoYDToULVca','6Rk97zEy7lMykW','67o064si7iQKia','zxHWlxzHBa','C2nOB29S','lNbHBMvSid4','CM9IBgvT','7zIe7j6q7j2yioUQQoYEKa','ngnHzJuWoYi','zgfPBhKTCMe','ywjZ','7iAm7iIy7kcqioYCHoY5MoULVca','ndjnCwjVvhe','6RcCpc9IpJWVza','CY10zxH0','m+UWScGYmdaLkq','67o4ioYEKoYDMcdRRltQUla','C3bYAxrL','zw50CMLLCW','y2TuAw1L','ywn0AxzL','y29SDw1UoYa','6Ro16RkP66cLia','pc9IpJWVzgK','yxjK','C29YDa','C3m9iMnHCMq','Axy+','AgL0','mti1sKjJt1nn','Dg9KyxKTyw4','yNrUiIbZDhK','io2vToQ4Ia','7j247zwy7is47jQulG','zxjYB3i','Dg9gAxHLza','y2XHC3nmAxm','ieXwpc9IpJW','ioUkPEUGPEYDTcdTLytSMPtTLAK','CMvTB3zL','ioYAQEYcRoUlMce','BgfZDerHDgu','BIbJBgfZCZ0','zgDL','7lky66AS6Rcaio2vTEYlRce','7j6e7j2eioUQQoUrKcdSNOxROku','zgfPBhK','C291DgHLyxm','65oXpc9IpI4G','ioU5OoULUcdQS7xQSQNSNOxRI4G','7zsm66ci7j206RcaioQWKoYNGoUqMa','AgvYBY1UAwm','CMfUAY1SAxm','B3jHz2uUyxa','z29Sza','CgvYC29UywW','yMf0DgXLlwW','BwfW','4PQG77IpioUlIEUePoYEHoYDGcaY','64ky64Ix7iwi7j2yioQ5QoUlRoYDJa','7iAm7iIy7kcqioUtNoUEMoQZPa','ntuYntr0wg13BuO','mtboq2P2u2i','pc9ZCgfUpJW','CJSIpJXKAxy','pgrPDIbJBge','mtO1ndKZotG','zwi6ogfMnZu','7ikS7jQP7zwGioYiMcdSL4BSIRu','y29TyM9syxq','ChjPy2u','DhLWzq','AgLKzgvU','yxjKlW','nty2ota5n3H1EfrKza','B2jQzwn0','CgXHEwvYCY8','Bwf4','Aw5UzxjuzxG','6Rk97zEy7lMy66w8ioUSToUGPca','4P2mioQZQoUtNoQWGcdRTOdSOBe','Bwf4sha','B25ZDgvY','zMf1BhqTCNq','7jwi7kcv7kcb7j24ioYxSoYcSoYDHa','ienptujpiq','zgLZywjSzwq','yw5RlwXPC3q','mJu5mvHdAeLYrG','64QuioUbNE2mKoYzLse','Bw9UC3rLCI0','AgfZ','pgiGC3r5Bgu','ztOZlJvLBtS','7kEe65cy7jEi7iQ164Ui64UKlG','Ahr0Chm6lY8','7ioD6Rcb67o064UKio2bVEUlIoUlPa','7yYm7zwCioYNHoYGLE2vNcdSI6a','C2f2zurHDge','ioUnSoUVUoYNGce','pZ8/','BM93','B25HBa','7j6L7iUG6RwS','zwvJmZLHmtC','DgfIlxnJAg8','pha+66gC65sPioYKKs4','BwLU','676W7kgX7zwCioYgJoYiMoYGKca','7lc97kgW7iUG7j2yioUZHoU5M+QYGa','DJ48yNv0Dg8','4PYfioUWMoQWKEYkTEUlIoUlPcW','mtuWmdCYofzJDeHXwa','CMvXthy','l2rPDJ4','psD0zxH0lwe','AxnmB2DNzwq','BMTuywi','pc9KAxy+','C2nYzwvUlq','CMvSB2fK','xsaVifWG64Quia','BsGN','y3vYq29TyM8','7jMe67k97zwCioYGLE2zLEUpHoULVa','7lsi65oX7zwz6Rwq','Dg9Nz2XL','8j+oIIdROiJRSQGG7jEfisa','mUUWScJRJztRUjqP66gCia','z2v0rwXLBwu','C2nYzwvUlwy','tMjKr0XyAW','8j+KLIdQSR3QS6a6ioUeIoUSTa','642W66+47kEa66w8io2pREUWNoYlNa','7zg466w4ioUZToYeNsdRQQNQSBG','C3rHCNqTyNu','C2HVCa','7jQP7ikS7j2yioYeSEQWKq','yxiOls1HktS','iIbZDhLSzt0','7zMP6RIiioUcMoUiL+YfIoQYGa','ywrK','DgfJAW','isdSI6dSHO3THzW','yJbKmdnJodC','AhaTyMfYlwy','xtWVC3bHBJ4','rZWVyNv0Dg8','7zMu7kcbioYHToYERce','7j2yioYlNoYEKEYDHcdTMzJSMie','pgi+','AwXS','qurhwtjJmvK','CMfUAW','ihn0EwXLpsi','C3rHCNrZv2K','tfyU','DgLVBNmUzMK','8j+uKIbmvI4','mUY0IoYDMcdSL6ZSNkdQSiaG','Dg9KyxLbBNm','ioYEPEYWQsdSMytRO4WH','zMXVB3i','6RIW7kEaioYvIUYDHcdQSOmG','zxHPC3rZ','7jEW6RwS7zwy7is47jQulG','BMSTBgLZDa','mJy0mZe1nLDbww5AzG','7ysW64s3io2zMoQYVEYDHcdTMzu','zxHWsxrLBq','7lk066cL7j20ioUQQoUrKcdSHOW','y29SB3i6DMe','phaGC3r5Bgu','C3m9iNrHzYa','66Y065syioQYGa','Aw5Uzxjive0','ioUpLEUkLcdQSjhSMlC','DMfSDwu','BgvHzgvYyM8','7jYepc9IpI4G','DgvYoYC+7jwe7kEb','zM9YrwfJAa','7zwCioYxRoYCOoUHNoYBGa','Dg9mB2nHBgu','4PQG77Ipio2vMEQ1KoYzGcdRI4NRHkq','mJaW66ci67kO7j2eioUpJa','id0GpW','DgfNlwu','DMfS','yw5ZD2vYlwK','mtjOs0LJzNG','67Ae7zwGioQZQoUGMa','D2vHCg9U','zgL2AxnPB24'];_0x2132=function(){return _0x41b641;};return _0x2132();}window[_0xc85556(0x1e5)]=function(_0x295c57){const _0x198d42=_0xc85556,_0x5afc62=shopItems['find'](_0x208295=>_0x208295[_0x198d42(0x1f1)]===_0x295c57),_0x435955=gameState['player'];let _0x9f242=_0x5afc62[_0x198d42(0x133)]==='w'&&_0x5afc62['val']>_0x435955[_0x198d42(0xe8)]||_0x5afc62[_0x198d42(0x133)]==='a'&&_0x5afc62[_0x198d42(0x1a8)]>_0x435955[_0x198d42(0x131)+'e']||_0x5afc62[_0x198d42(0x133)]==='x'&&_0x5afc62[_0x198d42(0x1a8)]>_0x435955[_0x198d42(0x1b2)+'e']||_0x5afc62['type']==='e'&&_0x5afc62[_0x198d42(0x1a8)]>_0x435955[_0x198d42(0x1cc)];if(!_0x9f242)return alert(_0x198d42(0x1c0)+'은\x20장비를\x20장착'+'\x20중입니다!');if(_0x435955['gold']>=_0x5afc62[_0x198d42(0x132)]){_0x435955[_0x198d42(0x122)]-=_0x5afc62[_0x198d42(0x132)];if(_0x5afc62['type']==='w')_0x435955[_0x198d42(0x1ac)]=_0x5afc62['name'],_0x435955[_0x198d42(0xe8)]=_0x5afc62[_0x198d42(0x1a8)];else{if(_0x5afc62[_0x198d42(0x133)]==='a')_0x435955['armor']=_0x5afc62['name'],_0x435955['comboRat'+'e']=_0x5afc62['val'];else _0x5afc62['type']==='x'?(_0x435955['acc']=_0x5afc62['name'],_0x435955[_0x198d42(0x1b2)+'e']=_0x5afc62['val']):(_0x435955[_0x198d42(0x195)]=_0x5afc62['name'],_0x435955[_0x198d42(0x1cc)]=_0x5afc62[_0x198d42(0x1a8)]);}saveData(),updateUI(),renderShop(),alert('✨\x20'+_0x5afc62['name']+_0x198d42(0x18d));}else alert(_0x198d42(0x13c)+_0x198d42(0x1db));};function renderCollection(){const _0x5f0064=_0xc85556,_0x525894=gameState['player'];document[_0x5f0064(0x16d)+_0x5f0064(0x1ca)]('collecti'+_0x5f0064(0x1fd))[_0x5f0064(0x19b)+'L']=monsterData[_0x5f0064(0x125)](_0x504315=>{const _0x12a76e=_0x5f0064,_0x5a74bb=_0x525894[_0x12a76e(0x1c8)+'on'][_0x504315[_0x12a76e(0x1f1)]]||0x0;return'<div\x20cla'+'ss=\x22card'+_0x12a76e(0x177)+'\x22flex-di'+_0x12a76e(0x1f2)+_0x12a76e(0x101)+'text-ali'+_0x12a76e(0x1af)+_0x12a76e(0x12c)+'\x20style=\x22'+'font-siz'+_0x12a76e(0x149)+'\x22>'+(_0x5a74bb>0x0?_0x504315[_0x12a76e(0xfd)]:'❓')+('</div><b'+'>')+(_0x5a74bb>0x0?_0x504315[_0x12a76e(0x1f1)]:_0x12a76e(0x150))+('</b><br>'+'<small>')+(_0x5a74bb>0x0?_0x504315[_0x12a76e(0xe1)]:_0x12a76e(0x18a)+_0x504315[_0x12a76e(0x15d)]+_0x12a76e(0x10c))+(_0x12a76e(0x1cd)+'<br><div'+_0x12a76e(0x186)+_0x12a76e(0x197)+'r(--a);\x22'+'>처치:\x20')+_0x5a74bb+('마리</div>'+_0x12a76e(0x162));})[_0x5f0064(0x1e8)]('');}window['showScre'+'en']=function(_0x414f86){const _0xc1a4e2=_0xc85556;document[_0xc1a4e2(0x1d2)+'ectorAll'](_0xc1a4e2(0xf1)+'\x20div')[_0xc1a4e2(0x1a1)](_0x347bd5=>{const _0xcb52b=_0xc1a4e2;if(_0x347bd5['id'][_0xcb52b(0x187)+'th'](_0xcb52b(0x163)))_0x347bd5[_0xcb52b(0x110)+'t']['add'](_0xcb52b(0x134));}),document[_0xc1a4e2(0x16d)+'ntById'](_0xc1a4e2(0x163)+_0x414f86)['classLis'+'t']['remove']('hidden');if(_0x414f86===_0xc1a4e2(0x185))switchRankTab(_0xc1a4e2(0x123));if(_0x414f86===_0xc1a4e2(0x174))renderShop();if(_0x414f86==='collecti'+'on')renderCollection();},window['switchRa'+_0xc85556(0x161)]=async function(_0x3a9eed){const _0xb77ead=_0xc85556;document[_0xb77ead(0x16d)+_0xb77ead(0x1ca)]('tab-pers'+_0xb77ead(0x152))['classLis'+'t']['toggle'](_0xb77ead(0x100),_0x3a9eed===_0xb77ead(0x123)),document[_0xb77ead(0x16d)+'ntById']('tab-dail'+'y')['classLis'+'t'][_0xb77ead(0x16a)](_0xb77ead(0x100),_0x3a9eed===_0xb77ead(0x11a)),document[_0xb77ead(0x16d)+_0xb77ead(0x1ca)](_0xb77ead(0x155)+'ol')['classLis'+'t']['toggle'](_0xb77ead(0x100),_0x3a9eed===_0xb77ead(0xf0)),document['getEleme'+_0xb77ead(0x1ca)](_0xb77ead(0x120)+'t')['classLis'+'t'][_0xb77ead(0x16a)](_0xb77ead(0x134),_0x3a9eed!=='personal'),document[_0xb77ead(0x16d)+'ntById'](_0xb77ead(0xf5)+_0xb77ead(0x192))['classLis'+'t'][_0xb77ead(0x16a)](_0xb77ead(0x134),_0x3a9eed!=='daily'),document[_0xb77ead(0x16d)+_0xb77ead(0x1ca)]('school-r'+_0xb77ead(0x143))[_0xb77ead(0x110)+'t'][_0xb77ead(0x16a)](_0xb77ead(0x134),_0x3a9eed!=='school');if(_0x3a9eed===_0xb77ead(0x123)){const _0x1c7340=document['getEleme'+'ntById'](_0xb77ead(0x120)+'t');_0x1c7340[_0xb77ead(0x19b)+'L']=_0xb77ead(0x156)+'..</p>';const _0x42de89=await get(query(ref(db,'leaderbo'+'ard'),orderByChild('lv'),limitToLast(0x32)));let _0x6506b6=[];_0x42de89[_0xb77ead(0x1a1)](_0x569ce4=>{const _0x5b24e2=_0xb77ead;if(_0x569ce4[_0x5b24e2(0x1a8)]()['lv'])_0x6506b6[_0x5b24e2(0x1bf)](_0x569ce4['val']());}),_0x6506b6[_0xb77ead(0x105)]((_0x15bc3c,_0x13e1ac)=>_0x13e1ac['lv']-_0x15bc3c['lv']),_0x1c7340[_0xb77ead(0x19b)+'L']=_0x6506b6['map']((_0x24ab3d,_0xda8a4a)=>{const _0x1a2f3a=_0xb77ead;let _0x1a0efc=leaderboardNicknameDisplay(_0x24ab3d[_0x1a2f3a(0x1b5)],_0x24ab3d[_0x1a2f3a(0x1de)]!==![]);return _0x1a2f3a(0x12d)+'ss=\x22card'+_0x1a2f3a(0x1fb)+'<b>'+(_0xda8a4a+0x1)+_0x1a2f3a(0x11c)+_0x24ab3d['school']+'\x20['+_0x1a0efc+(_0x1a2f3a(0x17e)+_0x1a2f3a(0x148)+'=\x22color:'+'var(--a)'+';\x22>LV.')+_0x24ab3d['lv']+(_0x1a2f3a(0x103)+'v>');})[_0xb77ead(0x1e8)]('');}else{if(_0x3a9eed===_0xb77ead(0x11a)){const _0x57d1ce=document['getEleme'+_0xb77ead(0x1ca)]('daily-ra'+_0xb77ead(0x192));_0x57d1ce[_0xb77ead(0x19b)+'L']='<p>집계\x20중.'+_0xb77ead(0xe4);const _0x3035b9=new Date()[_0xb77ead(0x1a3)+'DateStri'+'ng'](),_0x49108d=await get(query(ref(db,_0xb77ead(0x19e)+'ard'),orderByChild(_0xb77ead(0x18c)),limitToLast(0x1f4)));let _0x12de4c=[];_0x49108d[_0xb77ead(0x1a1)](_0x5068ef=>{const _0x47fe5f=_0xb77ead,_0xa4013c=_0x5068ef[_0x47fe5f(0x1a8)]();if(_0xa4013c['lastDate']===_0x3035b9&&_0xa4013c[_0x47fe5f(0x18c)]>0x0)_0x12de4c['push'](_0xa4013c);}),_0x12de4c[_0xb77ead(0x105)]((_0x2e80a6,_0x102dc5)=>_0x102dc5['todayAns']-_0x2e80a6['todayAns']),_0x12de4c=_0x12de4c['slice'](0x0,0xa),_0x57d1ce['innerHTM'+'L']=_0x12de4c['length']>0x0?_0x12de4c['map']((_0x458a32,_0x3c0291)=>{const _0x4a3a94=_0xb77ead;let _0x3ef2ab=leaderboardNicknameDisplay(_0x458a32[_0x4a3a94(0x1b5)],_0x458a32['isSecret']!==![]);return _0x4a3a94(0x12d)+'ss=\x22card'+'\x22><span>'+'<b>🔥\x20'+(_0x3c0291+0x1)+'위</b>.\x20'+_0x3ef2ab+(_0x4a3a94(0x12b)+'b\x20style='+'\x22color:v'+_0x4a3a94(0x176)+'\x22>')+_0x458a32['todayAns']+(_0x4a3a94(0xf9)+_0x4a3a94(0x107));})['join'](''):_0xb77ead(0x198)+_0xb77ead(0x15f)+'lign:cen'+_0xb77ead(0x1a0)+'\x20오늘\x20정답을\x20'+'맞힌\x20용사가\x20없'+'습니다!</p>';}else{const _0x4bd784=document['getEleme'+'ntById']('school-r'+'ank-list');_0x4bd784['innerHTM'+'L']=_0xb77ead(0x1f0)+_0xb77ead(0xe4);const _0x3712bf=await get(query(ref(db,_0xb77ead(0x19e)+_0xb77ead(0x104)),orderByChild('lv'),limitToLast(0x5dc))),_0x48a445={};_0x3712bf['forEach'](_0x9d214=>{const _0x1d193b=_0xb77ead,_0x5b6978=_0x9d214[_0x1d193b(0x1a8)]();if(_0x5b6978[_0x1d193b(0xf0)])_0x48a445[_0x5b6978[_0x1d193b(0xf0)]]=(_0x48a445[_0x5b6978['school']]||0x0)+(_0x5b6978['lv']||0x0);});const _0x16354a=Object[_0xb77ead(0xfe)](_0x48a445)['sort']((_0x1963e9,_0x9c3d2f)=>_0x9c3d2f[0x1]-_0x1963e9[0x1])[_0xb77ead(0xe6)](0x0,0x1e);_0x4bd784[_0xb77ead(0x19b)+'L']=_0x16354a['map']((_0x1bc3ba,_0xc24fbc)=>'<div\x20cla'+_0xb77ead(0x106)+_0xb77ead(0x1fb)+_0xb77ead(0x182)+(_0xc24fbc+0x1)+_0xb77ead(0x19f)+_0x1bc3ba[0x0]+('</span><'+'b\x20style='+'\x22color:v'+_0xb77ead(0x176)+'\x22>')+_0x1bc3ba[0x1]+(_0xb77ead(0x111)+_0xb77ead(0x15e)))['join']('');}}};function updateUI(){const _0x5ab4db=_0xc85556,_0x25af5f=gameState['player'];document[_0x5ab4db(0x16d)+'ntById'](_0x5ab4db(0x11f)+_0x5ab4db(0x1c6))[_0x5ab4db(0x13a)+'t']=_0x25af5f[_0x5ab4db(0x1b5)],document['getEleme'+'ntById']('lv')[_0x5ab4db(0x13a)+'t']=_0x25af5f['lv'],document['getEleme'+_0x5ab4db(0x1ca)]('gold')[_0x5ab4db(0x13a)+'t']=_0x25af5f['gold'],document['getEleme'+'ntById'](_0x5ab4db(0x10a)+_0x5ab4db(0xfa))[_0x5ab4db(0x13a)+'t']=_0x25af5f['todayAns']||0x0,document['getEleme'+'ntById']('hp-text')['innerTex'+'t']=Math[_0x5ab4db(0x139)](0x0,_0x25af5f['hp'])+'/'+_0x25af5f[_0x5ab4db(0x13d)],document['getEleme'+_0x5ab4db(0x1ca)](_0x5ab4db(0x1e7))['innerTex'+'t']=_0x25af5f[_0x5ab4db(0xe8)],document[_0x5ab4db(0x16d)+_0x5ab4db(0x1ca)](_0x5ab4db(0x1d7)+'l')['innerTex'+'t']=_0x25af5f['comboRat'+'e'],document['getEleme'+'ntById'](_0x5ab4db(0x1f3))[_0x5ab4db(0x13a)+'t']=_0x25af5f['bonusTim'+'e'],document[_0x5ab4db(0x16d)+'ntById'](_0x5ab4db(0xef))['innerTex'+'t']=_0x25af5f[_0x5ab4db(0x1cc)]||0x0,document[_0x5ab4db(0x16d)+_0x5ab4db(0x1ca)](_0x5ab4db(0x17d)+_0x5ab4db(0x183))[_0x5ab4db(0x1d1)]['width']=_0x25af5f['hp']/_0x25af5f[_0x5ab4db(0x13d)]*0x64+'%',document['getEleme'+_0x5ab4db(0x1ca)](_0x5ab4db(0x1f6)+'l')['style']['width']=gameState['currentM'+'onster']['hp']/gameState[_0x5ab4db(0x1f4)+_0x5ab4db(0x13e)]['maxHp']*0x64+'%';const _0x13ca35=document[_0x5ab4db(0x16d)+_0x5ab4db(0x1ca)]('combo-ba'+_0x5ab4db(0x117));_0x25af5f['curCombo']>0x0?(_0x13ca35[_0x5ab4db(0x13a)+'t']=_0x25af5f[_0x5ab4db(0x167)]+_0x5ab4db(0x141),_0x13ca35['style'][_0x5ab4db(0x1c2)]='block'):_0x13ca35['style'][_0x5ab4db(0x1c2)]='none';}
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
+import { getDatabase, ref, get, query, orderByChild, limitToLast, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+// Firebase 콘솔 → App Check → reCAPTCHA v3 등록 후 사이트 키 입력 (비우면 App Check 미사용)
+const RECAPTCHA_SITE_KEY = "";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDUADGY2c1Y7BFQQVImgHqX92xjNbdGLXk",
+    authDomain: "division-of-fractions.firebaseapp.com",
+    projectId: "division-of-fractions",
+    databaseURL: "https://division-of-fractions-default-rtdb.asia-southeast1.firebasedatabase.app/",
+    storageBucket: "division-of-fractions.firebasestorage.app",
+    messagingSenderId: "549398586980",
+    appId: "1:549398586980:web:8af75b0d03c87eec39a171"
+};
+const app = initializeApp(firebaseConfig);
+if (RECAPTCHA_SITE_KEY) {
+    initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider(RECAPTCHA_SITE_KEY),
+        isTokenAutoRefreshEnabled: true
+    });
+}
+const db = getDatabase(app);
+
+const ALLOWED_ATK = new Set([10, ...[
+    15, 25, 55, 110, 300, 600, 1000, 1500,
+    3, 7, 12, 22, 40, 60, 85, 120,
+    7, 9, 12, 16, 22,
+    50, 100, 200
+]]);
+
+const shopItems = [
+    {type:'w', icon:"🪵", name:"연습용 목검", desc:"시작보다 묵직한 타격감", price:100, val:15},
+    {type:'w', icon:"🗡️", name:"소수점 단검", desc:"소수점 사이를 파고드는 날카로움", price:300, val:25},
+    {type:'w', icon:"⚔️", name:"강철 분할도", desc:"몬스터를 정확히 등분하는 칼", price:800, val:55},
+    {type:'w', icon:"🔱", name:"황금 나눗셈검", desc:"높은 데미지를 자랑하는 부의 상징", price:1800, val:110},
+    {type:'w', icon:"⚡", name:"진리검: 제로", desc:"나눗셈의 끝을 본 자의 무기", price:4500, val:300},
+    {type:'w', icon:"🐉", name:"드래곤의 발톱검", desc:"드래곤의 비늘도 뚫어버리는 명검", price:15000, val:600},
+    {type:'w', icon:"🌋", name:"마왕 처단자", desc:"마왕을 베기 위해 벼려낸 검", price:35000, val:1000},
+    {type:'w', icon:"🌌", name:"창조신의 별빛검", desc:"우주를 반으로 가르는 절대 무기", price:70000, val:1500},
+    {type:'a', icon:"👕", name:"질긴 가죽옷", desc:"실수해도 툭툭 일어날 내구성", price:150, val:3},
+    {type:'a', icon:"🥋", name:"집중의 예복", desc:"연산 집중력을 높여주는 옷", price:450, val:7},
+    {type:'a', icon:"🛡️", name:"사슬 갑옷", desc:"안정적인 연산을 돕는 갑옷", price:1000, val:12},
+    {type:'a', icon:"🧥", name:"기사의 판금", desc:"데미지를 폭발시키는 기사의 자존심", price:2500, val:22},
+    {type:'a', icon:"💎", name:"용사의 성갑", desc:"완벽한 정확도를 가진 용사의 증표", price:5500, val:40},
+    {type:'a', icon:"🐉", name:"드래곤 본 아머", desc:"드래곤의 뼈로 만든 절대 방어구", price:12000, val:60},
+    {type:'a', icon:"🧛", name:"마왕의 망토", desc:"어둠의 힘으로 콤보를 유지한다", price:28000, val:85},
+    {type:'a', icon:"✨", name:"창조신의 날개옷", desc:"결코 콤보가 끊기지 않을 것 같은 기분", price:60000, val:120},
+    {type:'x', icon:"⌚", name:"나무 시계", desc:"2초의 여유가 생각보다 큽니다", price:200, val:7},
+    {type:'x', icon:"💍", name:"은빛 반지", desc:"차분하게 점을 찍을 수 있는 시간", price:600, val:9},
+    {type:'x', icon:"📿", name:"푸른 보석 목걸이", desc:"느려도 괜찮아요! 신속템", price:1300, val:12},
+    {type:'x', icon:"🧭", name:"차원의 나침반", desc:"시간이 멈춘 듯한 여유로움", price:2800, val:16},
+    {type:'x', icon:"⌛", name:"시간의 지배자", desc:"22초 안에만 풀면 무조건 2배!", price:6500, val:22},
+    {type:'e', icon:"📜", name:"학자의 두루마리", desc:"나눗셈의 깨달음으로 광속 성장!", price:8000, val:50},
+    {type:'e', icon:"🎓", name:"현자의 모자", desc:"경험치를 무려 2배(더블)로 늘려준다", price:25000, val:100},
+    {type:'e', icon:"🏆", name:"깨달음의 성배", desc:"경험치 획득량 3배(200%) 폭발!", price:55000, val:200}
+];
+
+const monsterData = [
+    {name:"소수점 슬라임", sprite:"💧", desc:"소수점 위치를 연구하세요.", reqLv:1},
+    {name:"나눗셈 고스트", sprite:"👻", desc:"몫의 0을 찾는 능력이 필요합니다.", reqLv:1},
+    {name:"분할 골렘", sprite:"🗿", desc:"자릿수가 많아도 당황하지 마세요.", reqLv:1},
+    {name:"소수 가시", sprite:"🌵", desc:"뾰족한 소수점 처리가 핵심!", reqLv:1},
+    {name:"소수점 드래곤", sprite:"🐲", desc:"나눗셈의 정점에 선 전설의 드래곤!", reqLv:50},
+    {name:"무한소수 마왕", sprite:"😈", desc:"최상위권 용사만 상대할 수 있는 끝판왕!", reqLv:100},
+    {name:"시공의 지배자 제로", sprite:"🌌", desc:"200레벨을 돌파한 진정한 신화적 존재!", reqLv:200}
+];
+
+let gameState = {
+    player: { nickname:"", school:"", lv:1, hp:100, maxHp:100, gold:0, exp:0, maxExp:50, atk:10, comboRate:0, bonusTime:5, expBonus:0, curCombo:0, isSecret:true, weapon:"무딘 검", armor:"평상복", acc:"없음", expItem:"없음", collection:{}, todayAns:0, lastDate:"" },
+    currentMonster: { name:"", sprite:"", hp:0, maxHp:0 },
+    currentProblem: { q:"", a:0, start:0 },
+    isLoggedIn: false,
+    lastAttackTime: 0,
+    saveBaseline: null,
+    lastSaveAt: 0
+};
+
+let saveDataTimer = null;
+
+// 🔒 공개 노드 저장·랭킹 표시용 (비공개 닉 처리). players에는 항상 실제 닉 유지.
+function maskNicknamePlain(nickname) {
+    const n = String(nickname || "");
+    if (n.length <= 2) return n.length ? n[0] + "★" : "★";
+    return n[0] + "★".repeat(n.length - 2) + n[n.length - 1];
+}
+function leaderboardNicknameDisplay(storedNickname, isSecret) {
+    if (isSecret === false) return storedNickname || "";
+    const s = String(storedNickname || "");
+    if (s.includes("★")) return s;
+    return maskNicknamePlain(s);
+}
+
+function isValidLoginNick(nick) {
+    if (!nick || nick.length > 20) return false;
+    return !/[.#$\[\]/\\]/.test(nick);
+}
+
+function snapshotBaseline(p) {
+    return { lv: p.lv || 1, todayAns: p.todayAns || 0, gold: p.gold || 0, atk: p.atk || 10 };
+}
+
+function sanitizePlayer(p) {
+    p.lv = Math.max(1, Math.min(9999, Math.floor(p.lv || 1)));
+    p.gold = Math.max(0, Math.min(1000000000, Math.floor(p.gold || 0)));
+    p.hp = Math.max(0, Math.min(500000, Math.floor(p.hp || 0)));
+    p.maxHp = Math.max(10, Math.min(500000, Math.floor(p.maxHp || 100)));
+    p.exp = Math.max(0, Math.min(100000, Math.floor(p.exp || 0)));
+    p.maxExp = Math.max(1, Math.min(100000, Math.floor(p.maxExp || 50)));
+    p.atk = Math.max(1, Math.min(1550, Math.floor(p.atk || 10)));
+    if (!ALLOWED_ATK.has(p.atk)) p.atk = 10;
+    p.comboRate = Math.max(0, Math.min(120, Math.floor(p.comboRate || 0)));
+    p.bonusTime = Math.max(1, Math.min(22, Math.floor(p.bonusTime || 5)));
+    p.expBonus = Math.max(0, Math.min(200, Math.floor(p.expBonus || 0)));
+    p.todayAns = Math.max(0, Math.min(100000, Math.floor(p.todayAns || 0)));
+    p.curCombo = Math.max(0, Math.min(999999, Math.floor(p.curCombo || 0)));
+    if (!p.collection || typeof p.collection !== "object") p.collection = {};
+    return p;
+}
+
+function enforceSaveLimits(p) {
+    const b = gameState.saveBaseline;
+    if (!b) return true;
+    if (p.lv > b.lv + 1) { p.lv = b.lv + 1; }
+    if (p.lv < b.lv) p.lv = b.lv;
+    if (p.todayAns > b.todayAns + 3) p.todayAns = b.todayAns + 3;
+    if (p.todayAns < b.todayAns) p.todayAns = b.todayAns;
+    if (p.gold > b.gold + 6000) p.gold = b.gold + 6000;
+    if (p.gold < b.gold - 70000) p.gold = Math.max(0, b.gold - 70000);
+    return true;
+}
+
+// 🛡️ 실시간 킥 기능
+function addKillSwitch() {
+    const userRef = ref(db, 'players/' + `${gameState.player.school}-${gameState.player.nickname}`);
+    onValue(userRef, (snapshot) => {
+        if (snapshot.val() && snapshot.val().kick === true) {
+            alert("🚫 비정상적인 플레이가 감지되어 접속이 차단되었습니다.");
+            location.reload(); 
+        }
+    });
+}
+
+// 👤 로그인 및 출석 로직
+window.processLogin = async function() {
+    let school = document.getElementById('school-name').value.trim().replace(/\s+/g,'');
+    let nick = document.getElementById('user-nick').value.trim();
+    if(!school || !nick) return alert("⚠️ 학교와 닉네임을 모두 입력해주세요!");
+    if(!isValidLoginNick(nick)) return alert("⚠️ 닉네임은 20자 이하이며 . # $ [ ] / \\ 는 사용할 수 없습니다.");
+    
+    if(school.endsWith("초")) school += "등학교";
+    else if(!school.endsWith("초등학교")) school += "초등학교";
+    
+    const userId = `${school}-${nick}`;
+    try {
+        const snap = await get(ref(db, 'players/' + userId));
+        const today = new Date().toLocaleDateString();
+        
+        if(snap.exists()) {
+            gameState.player = snap.val();
+            if(!gameState.player.collection) gameState.player.collection = {};
+            if(gameState.player.lastDate !== today) { gameState.player.todayAns = 0; gameState.player.lastDate = today; }
+            alert(`✅ 반갑습니다, ${gameState.player.nickname} 용사님!`);
+        } else {
+            gameState.player.school = school; gameState.player.nickname = nick; gameState.player.lastDate = today;
+            alert("✨ 새로운 모험의 시작을 환영합니다!");
+        }
+        sanitizePlayer(gameState.player);
+        gameState.saveBaseline = snapshotBaseline(gameState.player);
+        
+        gameState.isLoggedIn = true;
+        addKillSwitch();
+        document.getElementById('game-container').classList.remove('is-locked');
+        document.getElementById('start-button').innerText = "접속 완료";
+        document.getElementById('start-button').disabled = true;
+        document.getElementById('school-name').disabled = true;
+        document.getElementById('user-nick').disabled = true;
+        document.getElementById('secret-toggle').checked = gameState.player.isSecret;
+        
+        updateUI(); spawnMonster(); generateProblem();
+    } catch(e) { console.error(e); alert("연결 실패! 인터넷 환경을 확인하세요."); }
+};
+
+window.toggleSecret = function() {
+    if(!gameState.isLoggedIn) return;
+    gameState.player.isSecret = document.getElementById('secret-toggle').checked;
+    saveData();
+};
+
+// Private(players) + Public(leaderboard). 서버 없이: 클라이언트 검증 + database.rules.json
+function saveData() {
+    if (!gameState.isLoggedIn) return;
+    clearTimeout(saveDataTimer);
+    saveDataTimer = setTimeout(flushSaveData, 500);
+}
+
+function flushSaveData() {
+    if (!gameState.isLoggedIn) return;
+    const now = Date.now();
+    if (now - gameState.lastSaveAt < 400) return;
+    gameState.lastSaveAt = now;
+
+    const p = gameState.player;
+    const userId = `${p.school}-${p.nickname}`;
+    sanitizePlayer(p);
+    enforceSaveLimits(p);
+
+    const fullData = { ...p };
+    delete fullData.kick;
+
+    const rankData = {
+        lv: p.lv,
+        school: p.school,
+        nickname: p.isSecret !== false ? maskNicknamePlain(p.nickname) : p.nickname,
+        todayAns: p.todayAns || 0,
+        lastDate: p.lastDate,
+        isSecret: p.isSecret !== false
+    };
+
+    const updates = {};
+    updates['players/' + userId] = fullData;
+    updates['leaderboard/' + userId] = rankData;
+
+    update(ref(db), updates)
+        .then(() => { gameState.saveBaseline = snapshotBaseline(p); })
+        .catch(() => { alert("저장에 실패했습니다. 잠시 후 다시 시도해 주세요."); });
+}
+window.saveData = saveData;
+
+function logMessage(msg) {
+    const logDiv = document.getElementById('battle-log');
+    logDiv.innerHTML = `<div>> ${msg}</div>` + logDiv.innerHTML;
+}
+
+// ⚔️ 공격 처리
+window.handleAttack = function() {
+    if(!gameState.isLoggedIn) return;
+    
+    // 🛡️ 매크로 방어: 0.3초 미만 공격 무효화
+    const now = Date.now();
+    if(now - gameState.lastAttackTime < 300) { alert("🤖 경고: 너무 빠른 공격입니다!"); gameState.player.curCombo = 0; updateUI(); return; }
+    gameState.lastAttackTime = now;
+
+    const input = document.getElementById('answer-input');
+    const userAnswer = parseFloat(input.value.trim());
+    if(isNaN(userAnswer)) { input.value = ""; return; }
+    
+    const p = gameState.player;
+    const timeTaken = (Date.now() - gameState.currentProblem.start) / 1000;
+    const killedCount = p.collection[gameState.currentMonster.name] || 0;
+    
+    if(Math.abs(userAnswer - gameState.currentProblem.a) < 0.001) {
+        p.curCombo++; 
+        p.todayAns++;
+        
+        let collectionBonus = (killedCount >= 50) ? 1.2 : (killedCount >= 25 ? 1.1 : 1.0);
+        let baseAtk = Math.floor(p.atk * collectionBonus);
+        let timeBonus = (timeTaken <= p.bonusTime) ? 2 : 1;
+        if(timeBonus === 2) logMessage("⚡ 신속 공격! 데미지 2배!");
+        
+        let comboBonus = 1 + (p.curCombo * (p.comboRate / 100));
+        let damage = Math.floor((baseAtk * timeBonus) * comboBonus);
+        
+        gameState.currentMonster.hp -= damage;
+        document.getElementById('m-sprite').classList.add('monster-hit');
+        setTimeout(() => document.getElementById('m-sprite').classList.remove('monster-hit'), 400);
+        
+        logMessage(`🗡️ ${damage} 데미지!`);
+        if(gameState.currentMonster.hp <= 0) handleWin(); else generateProblem();
+    } else {
+        p.curCombo = 0; p.hp -= 15;
+        document.getElementById('monster-area').classList.add('screen-flash');
+        setTimeout(() => document.getElementById('monster-area').classList.remove('screen-flash'), 400);
+        
+        logMessage(`😭 오답! -15 HP (정답: ${gameState.currentProblem.a})`);
+        if(p.hp <= 0) { alert("체력이 모두 소진되었습니다."); p.hp = 30; } 
+        generateProblem();
+    }
+    input.value = ""; 
+    updateUI(); 
+    saveData(); 
+};
+
+// 💡 1~20레벨 완벽 난이도 분배 (초등 6학년 과정)
+function generateProblem() {
+    const lv = gameState.player.lv;
+    let divisor = Math.floor(Math.random() * 8) + 2; 
+    let quotient;
+
+    if (lv <= 20) {
+        // 1~20레벨: 소수 첫째 자리 (1.1 ~ 9.9)
+        quotient = (Math.floor(Math.random() * 89) + 11) / 10;
+    } else {
+        // 21레벨 이상: 소수 둘째 자리 (1.01 ~ 9.99)
+        quotient = (Math.floor(Math.random() * 899) + 101) / 100;
+    }
+    
+    let dividend = parseFloat((divisor * quotient).toFixed(2));
+    gameState.currentProblem = { q: `${dividend} ÷ ${divisor} = ?`, a: quotient, start: Date.now() };
+    document.getElementById('p-text').innerText = gameState.currentProblem.q;
+    document.getElementById('answer-input').focus();
+}
+
+function handleWin() {
+    const p = gameState.player;
+    const killedCount = p.collection[gameState.currentMonster.name] || 0;
+    
+    let goldReward = Math.floor(50 * (killedCount >= 50 ? 1.1 : (killedCount >= 10 ? 1.05 : 1.0)));
+    let expReward = Math.floor(20 * (1 + (p.expBonus / 100)));
+    
+    p.gold += goldReward; 
+    p.exp += expReward; 
+    p.collection[gameState.currentMonster.name] = killedCount + 1; 
+    
+    if(p.exp >= p.maxExp) {
+        p.lv++; p.exp = 0; p.maxExp = 50 + (p.lv * 5); p.maxHp += 20; p.hp = p.maxHp;
+        alert(`🎊 레벨 업! LV.${p.lv}`);
+    }
+    spawnMonster(); generateProblem(); updateUI(); saveData();
+}
+
+function spawnMonster() {
+    const lv = gameState.player.lv;
+    let availableMonsters = monsterData.filter(m => lv >= m.reqLv);
+    const rand = availableMonsters[Math.floor(Math.random() * availableMonsters.length)];
+    
+    gameState.currentMonster = { name: rand.name, sprite: rand.sprite, maxHp: 36 + (lv * 18) + Math.floor(lv * lv * 0.012) };
+    gameState.currentMonster.hp = gameState.currentMonster.maxHp;
+    
+    document.getElementById('m-name').innerText = gameState.currentMonster.name;
+    document.getElementById('m-sprite').innerText = gameState.currentMonster.sprite;
+    updateUI();
+}
+
+function renderShop() {
+    let html = "";
+    shopItems.forEach(item => {
+        let tagClass = item.type === 'w' ? 'tag-w' : (item.type === 'a' ? 'tag-a' : (item.type === 'x' ? 'tag-x' : 'tag-e'));
+        let typeName = item.type === 'w' ? '무기' : (item.type === 'a' ? '방어구' : (item.type === 'x' ? '장신구' : '유물'));
+        let effectDesc = item.type === 'w' ? `공격력 ${item.val}` : (item.type === 'a' ? `콤보+${item.val}%` : (item.type === 'x' ? `보너스 ${item.val}초` : `경험치+${item.val}%`));
+        
+        html += `<div class="card"><div style="flex:1;"><span class="tag ${tagClass}">${typeName} ${item.icon}</span><br><b>${item.name}</b><br><small>${item.desc}</small><br><b>효과: ${effectDesc}</b></div><button class="action-btn" style="background:#4caf50;" onclick="buyItem('${item.name}')">${item.price}G</button></div>`;
+    });
+    document.getElementById('shop-list').innerHTML = html;
+}
+
+window.buyItem = function(itemName) {
+    const item = shopItems.find(i => i.name === itemName);
+    const p = gameState.player;
+    
+    let isBetter = (item.type === 'w' && item.val > p.atk) || (item.type === 'a' && item.val > p.comboRate) || (item.type === 'x' && item.val > p.bonusTime) || (item.type === 'e' && item.val > p.expBonus);
+    if(!isBetter) return alert("⚠️ 이미 더 좋은 장비를 장착 중입니다!");
+    
+    if(p.gold >= item.price) {
+        p.gold -= item.price;
+        if(item.type === 'w') { p.weapon = item.name; p.atk = item.val; }
+        else if(item.type === 'a') { p.armor = item.name; p.comboRate = item.val; }
+        else if(item.type === 'x') { p.acc = item.name; p.bonusTime = item.val; }
+        else { p.expItem = item.name; p.expBonus = item.val; }
+        
+        saveData(); updateUI(); renderShop();
+        alert(`✨ ${item.name} 장착 완료!`);
+    } else alert("❌ 골드가 부족합니다!");
+};
+
+function renderCollection() {
+    const p = gameState.player;
+    document.getElementById('collection-grid').innerHTML = monsterData.map(m => {
+        const killed = p.collection[m.name] || 0;
+        return `<div class="card" style="flex-direction:column; text-align:center;"><div style="font-size:3.5em;">${killed > 0 ? m.sprite : '❓'}</div><b>${killed > 0 ? m.name : '???'}</b><br><small>${killed > 0 ? m.desc : '🔒 LV.' + m.reqLv + ' 해금'}</small><br><div style="color:var(--a);">처치: ${killed}마리</div></div>`;
+    }).join('');
+}
+
+window.showScreen = function(screenName) {
+    document.querySelectorAll('.panel > div').forEach(div => { if(div.id.startsWith('screen-')) div.classList.add('hidden'); });
+    document.getElementById('screen-' + screenName).classList.remove('hidden');
+    
+    if(screenName === 'rank') switchRankTab('personal');
+    if(screenName === 'shop') renderShop();
+    if(screenName === 'collection') renderCollection();
+};
+
+window.switchRankTab = async function(tabName) {
+    document.getElementById('tab-personal').classList.toggle('active', tabName === 'personal');
+    document.getElementById('tab-daily').classList.toggle('active', tabName === 'daily');
+    document.getElementById('tab-school').classList.toggle('active', tabName === 'school');
+    
+    document.getElementById('rank-list').classList.toggle('hidden', tabName !== 'personal');
+    document.getElementById('daily-rank-list').classList.toggle('hidden', tabName !== 'daily');
+    document.getElementById('school-rank-list').classList.toggle('hidden', tabName !== 'school');
+    
+    if(tabName === 'personal') {
+        const rankList = document.getElementById('rank-list'); rankList.innerHTML = "<p>로딩 중...</p>";
+        const snap = await get(query(ref(db, 'leaderboard'), orderByChild('lv'), limitToLast(50)));
+        let list = []; snap.forEach(c => { if(c.val().lv) list.push(c.val()); });
+        list.sort((a,b) => b.lv - a.lv);
+        rankList.innerHTML = list.map((p, i) => {
+            let nick = leaderboardNicknameDisplay(p.nickname, p.isSecret !== false);
+            return `<div class="card"><span><b>${i+1}등</b>. ${p.school} [${nick}]</span><b style="color:var(--a);">LV.${p.lv}</b></div>`;
+        }).join('');
+    } 
+    else if(tabName === 'daily') {
+        const dailyList = document.getElementById('daily-rank-list'); dailyList.innerHTML = "<p>집계 중...</p>";
+        const today = new Date().toLocaleDateString();
+        // 💡 안정성 패치: 활동 유저 누락 방지를 위해 최대 500명을 불러와서 필터링 후 10명 추출
+        const snap = await get(query(ref(db, 'leaderboard'), orderByChild('todayAns'), limitToLast(500)));
+        let list = []; snap.forEach(c => { const p = c.val(); if(p.lastDate === today && p.todayAns > 0) list.push(p); });
+        list.sort((a,b) => b.todayAns - a.todayAns);
+        list = list.slice(0, 10);
+        dailyList.innerHTML = list.length > 0 ? list.map((p, i) => {
+            let nick = leaderboardNicknameDisplay(p.nickname, p.isSecret !== false);
+            return `<div class="card"><span><b>🔥 ${i+1}위</b>. ${nick}</span><b style="color:var(--a);">${p.todayAns}개</b></div>`;
+        }).join('') : "<p style='text-align:center;'>아직 오늘 정답을 맞힌 용사가 없습니다!</p>";
+    } 
+    else {
+        const schoolList = document.getElementById('school-rank-list'); schoolList.innerHTML = "<p>집계 중...</p>";
+        const snap = await get(query(ref(db, 'leaderboard'), orderByChild('lv'), limitToLast(1500)));
+        const total = {}; snap.forEach(c => { const p = c.val(); if(p.school) total[p.school] = (total[p.school] || 0) + (p.lv || 0); });
+        const sorted = Object.entries(total).sort((a,b) => b[1] - a[1]).slice(0, 30);
+        schoolList.innerHTML = sorted.map((s, i) => `<div class="card"><span><b>${i+1}위</b>. ${s[0]}</span><b style="color:var(--a);">${s[1]} LV</b></div>`).join('');
+    }
+};
+
+function updateUI() {
+    const p = gameState.player;
+    document.getElementById('hero-nickname').innerText = p.nickname;
+    document.getElementById('lv').innerText = p.lv;
+    document.getElementById('gold').innerText = p.gold;
+    document.getElementById('today-ans-text').innerText = p.todayAns || 0;
+    document.getElementById('hp-text').innerText = `${Math.max(0, p.hp)}/${p.maxHp}`;
+    document.getElementById('atk-val').innerText = p.atk;
+    document.getElementById('combo-val').innerText = p.comboRate;
+    document.getElementById('time-val').innerText = p.bonusTime;
+    document.getElementById('exp-val').innerText = p.expBonus || 0;
+    
+    document.getElementById('hp-bar-fill').style.width = (p.hp / p.maxHp * 100) + "%";
+    document.getElementById('m-hp-fill').style.width = (gameState.currentMonster.hp / gameState.currentMonster.maxHp * 100) + "%";
+    
+    const comboBadge = document.getElementById('combo-badge');
+    if(p.curCombo > 0) {
+        comboBadge.innerText = p.curCombo + " COMBO!";
+        comboBadge.style.display = 'block';
+    } else {
+        comboBadge.style.display = 'none';
+    }
+}
 </script>
 </body>
 </html>
