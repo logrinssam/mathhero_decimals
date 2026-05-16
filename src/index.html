@@ -257,6 +257,29 @@ window.processLogin = async function() {
         if(snap.exists()) {
             gameState.player = snap.val();
             if(!gameState.player.collection) gameState.player.collection = {};
+            // 💡 [자동 참교육 덫] 해커 판별 및 즉결 처형 로직
+            let totalKills = 0;
+            for(let m in gameState.player.collection) {
+                totalKills += gameState.player.collection[m];
+            }
+            
+            // 🚨 조작 증거 1: 잡은 몬스터가 50마리도 안 되는데 레벨이 50이 넘는다? (100% 사기)
+            // 🚨 조작 증거 2: 하루 만에 도달할 수 없는 물리적 한계치(예: 300레벨) 초과
+            if ((gameState.player.lv >= 50 && totalKills < 50) || gameState.player.lv > 300) {
+                alert("🚨 시스템 조작이 감지되어 리더보드에서 영구 추방됩니다.");
+                
+                // 1. 기기에 영구 차단 낙인 찍기
+                localStorage.setItem('blacklisted_user', 'true'); 
+                
+                // 2. 서버에 강퇴(kick) 도장 찍고, 랭킹판(leaderboard)에서 완전히 삭제!
+                update(ref(db), {
+                    ['players/' + userId + '/kick']: true,
+                    ['leaderboard/' + userId]: null 
+                });
+                
+                location.reload(); // 새로고침으로 게임 튕겨내기
+                return; // 접속 중단
+            }
             if(gameState.player.lastDate !== today) { gameState.player.todayAns = 0; gameState.player.lastDate = today; }
             alert(`✅ 반갑습니다, ${gameState.player.nickname} 용사님!`);
         } else {
