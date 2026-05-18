@@ -163,7 +163,8 @@ document.addEventListener('keydown', function(e) {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, set, get, query, orderByChild, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, get, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDUADGY2c1Y7BFQQVImgHqX92xjNbdGLXk",
@@ -176,6 +177,9 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const functions = getFunctions(app, "asia-northeast3");
+const loginPlayerFn = httpsCallable(functions, "loginPlayer");
+const savePlayerFn = httpsCallable(functions, "savePlayer");
 
 function getToday() {
     const d = new Date();
@@ -227,17 +231,14 @@ let gameState = {
     currentMonster: { name:"", sprite:"", hp:0, maxHp:0 },
     currentProblem: { q:"", a:0, start:0 },
     isLoggedIn: false,
-    lastAttackTime: 0
+    lastAttackTime: 0,
+    loginPassword: "",
+    saveInFlight: false,
+    savePending: false
 };
 
 function addKillSwitch() {
-    const userRef = ref(db, 'players/' + `${gameState.player.school}-${gameState.player.nickname}`);
-    onValue(userRef, (snapshot) => {
-        if (snapshot.val() && snapshot.val().kick === true) {
-            alert("🚫 비정상적인 플레이가 감지되어 접속이 차단되었습니다.");
-            location.reload(); 
-        }
-    });
+    // 서버 저장 모드에서는 players 직접 읽기를 잠글 수 있어 실시간 킥은 이후 publicKick 노드로 분리합니다.
 }
 
 // 👤 로그인 및 출석 로직 (비밀번호 추가 & 띄어쓰기 복구)
@@ -247,37 +248,23 @@ window.processLogin = async function() {
     let pw = document.getElementById('user-pw').value.trim(); 
 
     if(!school || !nick) return alert("⚠️ 학교와 닉네임을 모두 입력해주세요!");
+    if(pw && !/^\d{4}$/.test(pw)) return alert("⚠️ 비밀번호는 숫자 4자리만 사용할 수 있습니다.");
     
     if(school.endsWith("초")) school += "등학교";
     else if(!school.endsWith("초등학교")) school += "초등학교";
     
-    const userId = `${school}-${nick}`;
     try {
-        const snap = await get(ref(db, 'players/' + userId));
-        const today = getToday();
-        
-        if(snap.exists()) {
-            gameState.player = snap.val();
-            
-            if(gameState.player.pw) {
-                if(gameState.player.pw !== pw) {
-                    return alert("❌ 이 계정은 비밀번호로 보호되고 있습니다! 올바른 비밀번호를 입력해주세요.");
-                }
-            } else if(pw) {
-                gameState.player.pw = pw;
-                alert("🔒 계정 잠금 완료! 앞으로는 이 비밀번호를 입력해야만 로그인할 수 있습니다.");
-            }
+        const result = await loginPlayerFn({ school, nickname: nick, password: pw });
+        gameState.player = result.data.player;
+        gameState.loginPassword = pw;
+        if(!gameState.player.collection) gameState.player.collection = {};
 
-            if(!gameState.player.collection) gameState.player.collection = {};
-            if(gameState.player.lastDate !== today) { gameState.player.todayAns = 0; gameState.player.lastDate = today; }
-            alert(`✅ 반갑습니다, ${gameState.player.nickname} 용사님!`);
-        } else {
-            gameState.player.school = school; 
-            gameState.player.nickname = nick; 
-            if(pw) gameState.player.pw = pw; 
-            gameState.player.lastDate = today;
+        if(result.data.isNew) {
             alert("✨ 새로운 모험의 시작을 환영합니다!");
+        } else {
+            alert(`✅ 반갑습니다, ${gameState.player.nickname} 용사님!`);
         }
+        if(result.data.locked && pw) alert("🔒 비밀번호 보호가 적용되었습니다.");
         
         gameState.isLoggedIn = true;
         addKillSwitch();
@@ -291,7 +278,10 @@ window.processLogin = async function() {
         
         updateUI(); spawnMonster(); generateProblem();
         saveData(); 
-    } catch(e) { console.error(e); alert("연결 실패! 인터넷 환경을 확인하세요."); }
+    } catch(e) {
+        console.error(e);
+        alert(e.message || "연결 실패! 인터넷 환경을 확인하세요.");
+    }
 };
 
 window.toggleSecret = function() {
@@ -300,27 +290,35 @@ window.toggleSecret = function() {
     saveData();
 };
 
-function saveData() {
+async function saveData() {
     if(!gameState.isLoggedIn) return;
+    if(gameState.saveInFlight) {
+        gameState.savePending = true;
+        return;
+    }
+    gameState.saveInFlight = true;
     let p = gameState.player;
     if (p.comboRate > 120) p.comboRate = 120;
     if (p.bonusTime > 22) p.bonusTime = 22;
     if (p.expBonus > 200) p.expBonus = 200;
     if (p.atk > 1550) p.atk = 1550;
     if (p.todayAns > 100000) p.todayAns = 100000;
-    if (p.lv > 9999) p.lv = 9999;
-    
-    const userId = `${p.school}-${p.nickname}`;
-    
-    set(ref(db, 'players/' + userId), p);
-    set(ref(db, 'leaderboard/' + userId), {
-        lv: p.lv || 1,
-        todayAns: p.todayAns || 0,
-        school: p.school || "",
-        nickname: p.nickname || "",
-        lastDate: p.lastDate || getToday(),
-        isSecret: p.isSecret === false ? false : true  
-    });
+    if (p.lv > 2000) p.lv = 2000;
+
+    try {
+        const result = await savePlayerFn({ player: p, password: gameState.loginPassword });
+        gameState.player = result.data.player;
+        updateUI();
+    } catch(e) {
+        console.error(e);
+        alert(e.message || "저장 실패! 잠시 후 다시 시도해 주세요.");
+    } finally {
+        gameState.saveInFlight = false;
+        if(gameState.savePending) {
+            gameState.savePending = false;
+            saveData();
+        }
+    }
 }
 
 function logMessage(msg) {
@@ -494,7 +492,7 @@ window.switchRankTab = async function(tabName) {
         const dailyList = document.getElementById('daily-rank-list'); dailyList.innerHTML = "<p>집계 중...</p>";
         const today = getToday(); 
         
-        const snap = await get(ref(db, 'leaderboard'));
+        const snap = await get(query(ref(db, 'leaderboard'), orderByChild('todayAns'), limitToLast(1500)));
         let list = []; 
         snap.forEach(c => { 
             const p = c.val(); 
