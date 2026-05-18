@@ -329,6 +329,17 @@ const MONSTER_DATA = [
 
 const activeProblems = new Map();
 const lastAttackTime = new Map();
+// ===== 매크로 차단 =====
+const MINUTE_LIMIT = 40;
+const DAILY_LIMIT = 2000;
+const MIN_INTERVAL_MS = 1500;
+const BLOCK_DURATIONS = [
+    60 * 60 * 1000,
+    6 * 60 * 60 * 1000,
+    24 * 60 * 60 * 1000,
+    100 * 365 * 24 * 60 * 60 * 1000
+];
+const BLOCK_LABELS = ["1시간", "6시간", "24시간", "영구"];
 // ===== 상수 끝 =====
 
 async function resolvePlayerSession(data) {
