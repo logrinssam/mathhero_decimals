@@ -533,7 +533,7 @@ exports.loginPlayer = functions
 
 exports.savePlayer = functions
   .region(REGION)
-  .runWith({ maxInstances: 5, timeoutSeconds: 10 })
+  .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
   .https.onCall(async (data) => {
     const rawPlayer = data?.player;
     if (!rawPlayer || typeof rawPlayer !== "object") fail("저장할 데이터가 없습니다.");
@@ -560,7 +560,7 @@ exports.savePlayer = functions
 
 exports.getProblem = functions
   .region(REGION)
-  .runWith({ maxInstances: 5, timeoutSeconds: 10 })
+  .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
   .https.onCall(async (data) => {
     const { userId, player } = await resolvePlayerSession(data);
     await saveTrustedPlayer(userId, player);
@@ -594,7 +594,7 @@ exports.getProblem = functions
 
 exports.submitAnswer = functions
   .region(REGION)
-  .runWith({ maxInstances: 5, timeoutSeconds: 10 })
+  .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
   .https.onCall(async (data, context) => {                    // ✅ context 추가
     const { userId, player } = await resolvePlayerSession(data);
 
@@ -675,7 +675,7 @@ exports.submitAnswer = functions
 
 exports.buyItem = functions
   .region(REGION)
-  .runWith({ maxInstances: 5, timeoutSeconds: 10 })
+  .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
   .https.onCall(async (data) => {
     const { userId, player } = await resolvePlayerSession(data);
     const itemName = cleanName(data?.itemName, 40);
