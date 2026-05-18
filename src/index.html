@@ -111,8 +111,8 @@
             </div>
             <div id="problem-banner"><span id="p-text">로그인 해주세요!</span></div>
             <div style="display:flex; justify-content:center; align-items:center;">
-                <input type="text" id="answer-input" placeholder="정답" autocomplete="off" maxlength="10" onkeypress="if(event.keyCode==13) handleAttack()">
-                <button class="action-btn btn-attack" id="attack-btn" onclick="handleAttack()">공격!</button>
+                <input type="text" id="answer-input" placeholder="정답" autocomplete="off" maxlength="10" onkeypress="if(event.keyCode==13) handleAttack(event)">
+                <button class="action-btn btn-attack" id="attack-btn" onclick="handleAttack(event)">공격!</button>
             </div>
             <div id="battle-log" style="margin-top:20px; height:80px; overflow-y:auto; border-top:2px solid #eee; padding-top:10px; font-size:0.95em; color:#888;"></div>
         </div>
@@ -244,17 +244,6 @@ let gameState = {
     isAttacking: false
 };
 
-// 콘솔 매크로 차단: 실제 사용자 입력(isTrusted)이 있었는지 추적
-// (module 스크립트는 DOM 준비 후 실행되므로 DOMContentLoaded 불필요)
-let lastTrustedEventAt = 0;
-const TRUSTED_WINDOW_MS = 8000;
-
-document.getElementById('answer-input').addEventListener('keydown', (e) => {
-    if (e.isTrusted) lastTrustedEventAt = Date.now();
-});
-document.getElementById('attack-btn').addEventListener('pointerdown', (e) => {
-    if (e.isTrusted) lastTrustedEventAt = Date.now();
-});
 
 // 👤 로그인 로직
 window.processLogin = async function() {
@@ -363,12 +352,11 @@ async function generateProblem() {
 }
 
 // ✅ 핵심: 서버에 답 제출 (모든 계산은 서버에서)
-window.handleAttack = async function() {
+window.handleAttack = async function(e) {
     if(!gameState.isLoggedIn) return;
     if(gameState.isAttacking) return;
-
-    // 콘솔/자동화 매크로 차단: 실제 사용자 입력(isTrusted) 없으면 조용히 무시
-    if(Date.now() - lastTrustedEventAt > TRUSTED_WINDOW_MS) return;
+    // 콘솔 매크로 차단: 실제 사용자 이벤트(isTrusted)가 없으면 조용히 무시
+    if(!e || !e.isTrusted) return;
 
     const now = Date.now();
     if(now - gameState.lastAttackTime < 400) return;
