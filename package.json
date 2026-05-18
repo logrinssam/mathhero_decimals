@@ -9,6 +9,7 @@
     "backfill-leaderboard": "node scripts/backfill-leaderboard.mjs",
     "find-suspicious": "node scripts/find-suspicious.mjs",
     "count-schools": "node scripts/count-schools.mjs",
+    "reset-password": "node scripts/reset-password.mjs",
     "export-players": "npx firebase-tools database:get /players --project division-of-fractions --output scripts/players-export.json",
     "deploy:functions": "firebase deploy --only functions",
     "deploy:rules": "firebase deploy --only database"
