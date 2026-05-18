@@ -307,11 +307,10 @@ const MONSTER_DATA = [
 
 // ===== 매크로 차단 상수 =====
 const activeProblems  = new Map();
-const lastAttackTime  = new Map();
 
 const MINUTE_LIMIT    = 60;                          // 1분 최대 60회
 const DAILY_LIMIT     = 2000;                        // 하루 최대 2000회
-const MIN_INTERVAL_MS = 700;                         // 호출 최소 간격 0.7초 (정상 학생 보호)
+const MIN_INTERVAL_MS = 250;                         // 호출 최소 간격 0.25초 (연타만 거부)
 const BLOCK_DURATIONS = [
   60  * 60 * 1000,                                   // 1차 위반: 1시간
   6   * 60 * 60 * 1000,                              // 2차 위반: 6시간
@@ -363,7 +362,7 @@ async function checkRateLimit(userId) {
   }
 
   // 최소 호출 간격 위반은 차단하지 않고 이번 제출만 거부한다.
-  // 3초 제한은 빠른 학생도 걸릴 수 있어, 자동화 차단은 분당 호출 수/이상 행동 탐지에 맡긴다.
+  // 빠른 학생도 걸릴 수 있어, 자동화 차단은 분당 호출 수/이상 행동 탐지에 맡긴다.
   if (now - (data.lastCallTime || 0) < MIN_INTERVAL_MS) {
     fail("너무 빠릅니다. 잠깐만 천천히 눌러 주세요.", "resource-exhausted");
   }
@@ -600,10 +599,7 @@ exports.submitAnswer = functions
       fail("잘못된 답입니다.");
     }
 
-    const now  = Date.now();
-    const last = lastAttackTime.get(userId) || 0;
-    if (now - last < 400) fail("너무 빠릅니다.", "resource-exhausted");
-    lastAttackTime.set(userId, now);
+    const now = Date.now();
 
     const problem = activeProblems.get(userId);
     if (!problem) fail("문제를 먼저 받아 주세요.", "not-found");
