@@ -425,13 +425,13 @@ window.handleAttack = async function(e) {
 };
 
 document.getElementById('attack-btn').addEventListener('click', (e) => {
-    handleAttack(e);
+    window.handleAttack(e);
 });
 
 document.getElementById('answer-input').addEventListener('keydown', (e) => {
     if(e.key === 'Enter' && !e.isComposing) {
         e.preventDefault();
-        handleAttack(e);
+        window.handleAttack(e);
     }
 });
 
