@@ -13,7 +13,7 @@
         #top-bar { background: #ffffff; padding: 10px 15px; border-bottom: 5px solid var(--p); display: flex; justify-content: center; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         #top-bar input { font-family: 'Jua'; padding: 8px; border: 3px solid var(--p); border-radius: 12px; text-align: center; width: 140px; font-size: 1rem; }
         .btn-start { background: var(--a); border: none; border-radius: 12px; color: white; padding: 8px 25px; cursor: pointer; font-family: 'Jua'; font-size: 1.1em; box-shadow: 0 4px 0 #d32f2f; }
-        #notice-banner { background-color: #ffebee; color: #c62828; text-align: center; padding: 10px; font-size: 0.9em; font-weight: bold; border-bottom: 2px solid #ef9a9a; position: relative; z-index: 999; }
+        #notice-banner { background-color: #fff3e0; color: #e65100; text-align: center; padding: 10px; font-size: 0.9em; font-weight: bold; border-bottom: 2px solid #ffcc80; position: relative; z-index: 999; }
         .close-notice { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; background: rgba(0,0,0,0.1); width: 22px; height: 22px; line-height: 20px; border-radius: 50%; font-size: 14px; }
         
         #game-container { display: flex; width: 100%; max-width: 1050px; margin: 15px auto; padding: 0 15px; gap: 20px; transition: all 0.8s ease; flex: 1; }
@@ -79,12 +79,14 @@ document.addEventListener('keydown', function(e) {
 </script>
 
 <div id="top-bar">
-    <input type="text" id="school-name" placeholder="학교 (예: 한국초)">
+    <input type="text" id="school-name" placeholder="학교 (예: 화명초)">
     <input type="text" id="user-nick" placeholder="닉네임">
+    <input type="password" id="user-pw" placeholder="비번(선택)" maxlength="4" style="font-family: 'Jua'; padding: 8px; border: 3px solid var(--p); border-radius: 12px; text-align: center; width: 110px; font-size: 1rem;">
     <button class="btn-start" id="start-button" onclick="processLogin()">모험 시작!</button>
 </div>
 <div id="notice-banner">
-    📢 시스템 보안 강화 및 TOP 10 정답왕 / TOP 30 학교 랭킹이 오픈되었습니다!
+    📢 <b>[내 캐릭터 지키기]</b> 다른 사람이 내 아이디로 들어오는 걸 막으려면 🔒<b>비밀번호(숫자 4자리)</b>를 적고 시작해요!<br>
+    <span style="font-size: 0.85em; font-weight: normal; color: #d84315;">(비밀번호는 선택사항입니다. 잃어버리면 안 되니 기억하기 쉬운 숫자로 정하세요!)</span>
     <span class="close-notice" onclick="this.parentElement.style.display='none'">X</span>
 </div>
 
@@ -175,7 +177,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 날짜 포맷 강제 고정
 function getToday() {
     const d = new Date();
     const year = d.getFullYear();
@@ -229,7 +230,6 @@ let gameState = {
     lastAttackTime: 0
 };
 
-// 🛡️ 실시간 킥 기능
 function addKillSwitch() {
     const userRef = ref(db, 'players/' + `${gameState.player.school}-${gameState.player.nickname}`);
     onValue(userRef, (snapshot) => {
@@ -240,10 +240,12 @@ function addKillSwitch() {
     });
 }
 
-// 👤 로그인 및 출석 로직
+// 👤 로그인 및 출석 로직 (비밀번호 추가 & 띄어쓰기 복구)
 window.processLogin = async function() {
-    let school = document.getElementById('school-name').value.trim().replace(/\s+/g,'');
+    let school = document.getElementById('school-name').value.trim();
     let nick = document.getElementById('user-nick').value.trim();
+    let pw = document.getElementById('user-pw').value.trim(); 
+
     if(!school || !nick) return alert("⚠️ 학교와 닉네임을 모두 입력해주세요!");
     
     if(school.endsWith("초")) school += "등학교";
@@ -256,33 +258,24 @@ window.processLogin = async function() {
         
         if(snap.exists()) {
             gameState.player = snap.val();
-            if(!gameState.player.collection) gameState.player.collection = {};
-            // 💡 [자동 참교육 덫] 해커 판별 및 즉결 처형 로직
-            let totalKills = 0;
-            for(let m in gameState.player.collection) {
-                totalKills += gameState.player.collection[m];
-            }
             
-            // 🚨 조작 증거: 잡은 몬스터가 50마리도 안 되는데 레벨이 50이 넘는다? (100% 사기)
-            if (gameState.player.lv >= 50 && totalKills < 50) {
-                alert("🚨 시스템 조작이 감지되어 리더보드에서 영구 추방됩니다.");
-                
-                // 1. 기기에 영구 차단 낙인 찍기
-                localStorage.setItem('blacklisted_user', 'true'); 
-                
-                // 2. 서버에 강퇴(kick) 도장 찍고, 랭킹판(leaderboard)에서 완전히 삭제!
-                update(ref(db), {
-                    ['players/' + userId + '/kick']: true,
-                    ['leaderboard/' + userId]: null 
-                });
-                
-                location.reload(); // 새로고침으로 게임 튕겨내기
-                return; // 접속 중단
+            if(gameState.player.pw) {
+                if(gameState.player.pw !== pw) {
+                    return alert("❌ 이 계정은 비밀번호로 보호되고 있습니다! 올바른 비밀번호를 입력해주세요.");
+                }
+            } else if(pw) {
+                gameState.player.pw = pw;
+                alert("🔒 계정 잠금 완료! 앞으로는 이 비밀번호를 입력해야만 로그인할 수 있습니다.");
             }
+
+            if(!gameState.player.collection) gameState.player.collection = {};
             if(gameState.player.lastDate !== today) { gameState.player.todayAns = 0; gameState.player.lastDate = today; }
             alert(`✅ 반갑습니다, ${gameState.player.nickname} 용사님!`);
         } else {
-            gameState.player.school = school; gameState.player.nickname = nick; gameState.player.lastDate = today;
+            gameState.player.school = school; 
+            gameState.player.nickname = nick; 
+            if(pw) gameState.player.pw = pw; 
+            gameState.player.lastDate = today;
             alert("✨ 새로운 모험의 시작을 환영합니다!");
         }
         
@@ -293,10 +286,11 @@ window.processLogin = async function() {
         document.getElementById('start-button').disabled = true;
         document.getElementById('school-name').disabled = true;
         document.getElementById('user-nick').disabled = true;
+        document.getElementById('user-pw').disabled = true; 
         document.getElementById('secret-toggle').checked = gameState.player.isSecret;
         
         updateUI(); spawnMonster(); generateProblem();
-        saveData(); //
+        saveData(); 
     } catch(e) { console.error(e); alert("연결 실패! 인터넷 환경을 확인하세요."); }
 };
 
@@ -306,7 +300,6 @@ window.toggleSecret = function() {
     saveData();
 };
 
-// 🛡️ 데이터 무결성 검사 후 저장
 function saveData() {
     if(!gameState.isLoggedIn) return;
     let p = gameState.player;
@@ -319,7 +312,6 @@ function saveData() {
     
     const userId = `${p.school}-${p.nickname}`;
     
-    // 💡 [버그 수정] 파이어베이스 검증 오류를 막기 위한 필수 스탯 강제 주입
     set(ref(db, 'players/' + userId), p);
     set(ref(db, 'leaderboard/' + userId), {
         lv: p.lv || 1,
@@ -327,7 +319,7 @@ function saveData() {
         school: p.school || "",
         nickname: p.nickname || "",
         lastDate: p.lastDate || getToday(),
-        isSecret: p.isSecret === false ? false : true  // 무조건 boolean 값 보장!
+        isSecret: p.isSecret === false ? false : true  
     });
 }
 
@@ -336,7 +328,6 @@ function logMessage(msg) {
     logDiv.innerHTML = `<div>> ${msg}</div>` + logDiv.innerHTML;
 }
 
-// ⚔️ 공격 처리
 window.handleAttack = function() {
     if(!gameState.isLoggedIn) return;
     
@@ -384,7 +375,6 @@ window.handleAttack = function() {
     saveData(); 
 };
 
-// 💡 1~20레벨 완벽 난이도 분배
 function generateProblem() {
     const lv = gameState.player.lv;
     let divisor = Math.floor(Math.random() * 8) + 2; 
@@ -504,7 +494,6 @@ window.switchRankTab = async function(tabName) {
         const dailyList = document.getElementById('daily-rank-list'); dailyList.innerHTML = "<p>집계 중...</p>";
         const today = getToday(); 
         
-        // 💡 [핵심 패치] '어제 유령 데이터'를 무시하고 서버의 전체 리더보드를 통째로 불러와서 브라우저가 걸러냅니다!
         const snap = await get(ref(db, 'leaderboard'));
         let list = []; 
         snap.forEach(c => { 
