@@ -289,6 +289,86 @@ function publicPlayer(p) {
   return out;
 }
 
+// ===== 새 보안 함수용 상수 =====
+const SHOP_ITEMS = [
+  { type: "w", name: "연습용 목검", price: 100, val: 15 },
+  { type: "w", name: "소수점 단검", price: 300, val: 25 },
+  { type: "w", name: "강철 분할도", price: 800, val: 55 },
+  { type: "w", name: "황금 나눗셈검", price: 1800, val: 110 },
+  { type: "w", name: "진리검: 제로", price: 4500, val: 300 },
+  { type: "w", name: "드래곤의 발톱검", price: 15000, val: 600 },
+  { type: "w", name: "마왕 처단자", price: 35000, val: 1000 },
+  { type: "w", name: "창조신의 별빛검", price: 70000, val: 1500 },
+  { type: "a", name: "질긴 가죽옷", price: 150, val: 3 },
+  { type: "a", name: "집중의 예복", price: 450, val: 7 },
+  { type: "a", name: "사슬 갑옷", price: 1000, val: 12 },
+  { type: "a", name: "기사의 판금", price: 2500, val: 22 },
+  { type: "a", name: "용사의 성갑", price: 5500, val: 40 },
+  { type: "a", name: "드래곤 본 아머", price: 12000, val: 60 },
+  { type: "a", name: "마왕의 망토", price: 28000, val: 85 },
+  { type: "a", name: "창조신의 날개옷", price: 60000, val: 120 },
+  { type: "x", name: "나무 시계", price: 200, val: 7 },
+  { type: "x", name: "은빛 반지", price: 600, val: 9 },
+  { type: "x", name: "푸른 보석 목걸이", price: 1300, val: 12 },
+  { type: "x", name: "차원의 나침반", price: 2800, val: 16 },
+  { type: "x", name: "시간의 지배자", price: 6500, val: 22 },
+  { type: "e", name: "학자의 두루마리", price: 8000, val: 50 },
+  { type: "e", name: "현자의 모자", price: 25000, val: 100 },
+  { type: "e", name: "깨달음의 성배", price: 55000, val: 200 },
+];
+
+const MONSTER_DATA = [
+  { name: "소수점 슬라임", reqLv: 1 },
+  { name: "나눗셈 고스트", reqLv: 1 },
+  { name: "분할 골렘", reqLv: 1 },
+  { name: "소수 가시", reqLv: 1 },
+  { name: "소수점 드래곤", reqLv: 50 },
+  { name: "무한소수 마왕", reqLv: 100 },
+  { name: "시공의 지배자 제로", reqLv: 200 },
+];
+
+const activeProblems = new Map();
+const lastAttackTime = new Map();
+// ===== 상수 끝 =====
+
+async function resolvePlayerSession(data) {
+  const rawSchool = data?.school;
+  const school = normalizeSchool(rawSchool);
+  const nickname = cleanName(data?.nickname, 40);
+  const userId = userIdFor(school, nickname);
+  const found = await findExistingPlayer(rawSchool || school, nickname, userId);
+  const existing = found.player;
+  if (!existing) fail("플레이어를 찾을 수 없습니다.", "not-found");
+  const checkedPw = assertPassword(existing, found.userId, data?.password);
+  const player = sanitizePlayer(existing, existing, school, nickname);
+  if (existing.pwHash || existing.pw || checkedPw) {
+    player.pwHash = passwordHash(userId, checkedPw);
+  }
+  return { school, nickname, userId, player };
+}
+
+async function saveTrustedPlayer(userId, player) {
+  const updates = {};
+  updates[`players/${userId}`] = player;
+  updates[`leaderboard/${userId}`] = rankDataFor(player);
+  await db.ref().update(updates);
+}
+
+function pickMonsterForLevel(lv) {
+  const available = MONSTER_DATA.filter((m) => lv >= m.reqLv);
+  return available[Math.floor(Math.random() * available.length)] || MONSTER_DATA[0];
+}
+
+function makeProblemForLevel(lv) {
+  const divisor = Math.floor(Math.random() * 8) + 2;
+  const quotient =
+    lv <= 20
+      ? (Math.floor(Math.random() * 89) + 11) / 10
+      : (Math.floor(Math.random() * 899) + 101) / 100;
+  const dividend = Number((divisor * quotient).toFixed(2));
+  return { question: `${dividend} ÷ ${divisor} = ?`, answer: quotient };
+}
+
 exports.loginPlayer = functions.region(REGION).https.onCall(async (data) => {
   const rawSchool = data?.school;
   const school = normalizeSchool(rawSchool);
@@ -329,16 +409,162 @@ exports.savePlayer = functions.region(REGION).https.onCall(async (data) => {
   const found = await findExistingPlayer(rawSchool, nickname, userId);
   const existing = found.player;
   const checkedPw = assertPassword(existing, found.userId, data?.password);
-  const player = sanitizePlayer(rawPlayer, existing, school, nickname);
+  if (!existing) fail("플레이어를 찾을 수 없습니다.", "not-found");
+
+  // Step 4 이후 클라이언트가 보낸 레벨/골드/정답 수치는 신뢰하지 않습니다.
+  // 기존 savePlayer는 랭킹 숨김 설정 같은 프로필성 변경만 반영합니다.
+  const player = sanitizePlayer(existing, existing, school, nickname);
+  player.isSecret = rawPlayer.isSecret !== false;
 
   if (existing?.pwHash || existing?.pw || checkedPw) {
     player.pwHash = passwordHash(userId, checkedPw);
   }
 
-  const updates = {};
-  updates[`players/${userId}`] = player;
-  updates[`leaderboard/${userId}`] = rankDataFor(player);
-  await db.ref().update(updates);
+  await saveTrustedPlayer(userId, player);
 
+  return { player: publicPlayer(player) };
+});
+
+exports.getProblem = functions.region(REGION).https.onCall(async (data) => {
+  const { userId, player } = await resolvePlayerSession(data);
+  await saveTrustedPlayer(userId, player);
+
+  const lv = player.lv || 1;
+  const existing = activeProblems.get(userId);
+  let monster;
+  if (existing && existing.monsterHp > 0) {
+    monster = {
+      name: existing.monsterName,
+      hp: existing.monsterHp,
+      maxHp: existing.monsterMaxHp,
+    };
+  } else {
+    const picked = pickMonsterForLevel(lv);
+    const maxHp = 36 + lv * 18 + Math.floor(lv * lv * 0.012);
+    monster = { name: picked.name, hp: maxHp, maxHp };
+  }
+
+  const problem = makeProblemForLevel(lv);
+  activeProblems.set(userId, {
+    answer: problem.answer,
+    createdAt: Date.now(),
+    monsterName: monster.name,
+    monsterHp: monster.hp,
+    monsterMaxHp: monster.maxHp,
+  });
+
+  return {
+    question: problem.question,
+    monster,
+    player: publicPlayer(player),
+  };
+});
+
+exports.submitAnswer = functions.region(REGION).https.onCall(async (data) => {
+  const { userId, player } = await resolvePlayerSession(data);
+  const rawAnswer = String(data?.answer ?? "").trim();
+  if (!/^-?\d*\.?\d+$/.test(rawAnswer)) fail("잘못된 답입니다.");
+  const userAnswer = Number.parseFloat(rawAnswer);
+  if (!Number.isFinite(userAnswer) || Math.abs(userAnswer) > 10000) {
+    fail("잘못된 답입니다.");
+  }
+
+  const now = Date.now();
+  const last = lastAttackTime.get(userId) || 0;
+  if (now - last < 400) fail("너무 빠릅니다.", "resource-exhausted");
+  lastAttackTime.set(userId, now);
+
+  const problem = activeProblems.get(userId);
+  if (!problem) fail("문제를 먼저 받아 주세요.", "not-found");
+
+  const isCorrect = Math.abs(userAnswer - problem.answer) < 0.001;
+  const elapsed = (now - problem.createdAt) / 1000;
+  const result = { correct: isCorrect, correctAnswer: problem.answer };
+
+  if (isCorrect) {
+    player.curCombo = (player.curCombo || 0) + 1;
+    player.todayAns = Math.min((player.todayAns || 0) + 1, 100000);
+
+    const killedCount = (player.collection && player.collection[problem.monsterName]) || 0;
+    const collectionBonus = killedCount >= 50 ? 1.2 : killedCount >= 25 ? 1.1 : 1;
+    const baseAtk = Math.floor((player.atk || 10) * collectionBonus);
+    const timeBonus = elapsed <= (player.bonusTime || 5) ? 2 : 1;
+    const comboBonus = 1 + player.curCombo * ((player.comboRate || 0) / 100);
+    const damage = Math.floor(baseAtk * timeBonus * comboBonus);
+
+    problem.monsterHp -= damage;
+    result.damage = damage;
+    result.timeBonus = timeBonus === 2;
+
+    if (problem.monsterHp <= 0) {
+      const goldReward = Math.floor(
+        50 * (killedCount >= 50 ? 1.1 : killedCount >= 10 ? 1.05 : 1),
+      );
+      const expReward = Math.floor(20 * (1 + (player.expBonus || 0) / 100));
+      player.gold = Math.min((player.gold || 0) + goldReward, 1000000000);
+      player.exp = Math.min((player.exp || 0) + expReward, 100000);
+      player.collection = sanitizeCollection(player.collection);
+      player.collection[problem.monsterName] = Math.min(killedCount + 1, 100000);
+
+      if (player.exp >= player.maxExp && player.lv < MAX_LV) {
+        player.lv = Math.min(player.lv + 1, MAX_LV);
+        player.exp = 0;
+        player.maxExp = Math.min(50 + player.lv * 5, 100000);
+        player.maxHp = Math.min((player.maxHp || 100) + 20, 500000);
+        player.hp = player.maxHp;
+        result.levelUp = true;
+      }
+
+      result.monsterDefeated = true;
+      result.goldReward = goldReward;
+      result.expReward = expReward;
+      activeProblems.delete(userId);
+    } else {
+      activeProblems.set(userId, problem);
+      result.monsterHp = problem.monsterHp;
+    }
+  } else {
+    player.curCombo = 0;
+    player.hp = (player.hp || 100) - 15;
+    if (player.hp <= 0) player.hp = 30;
+    activeProblems.set(userId, problem);
+    result.monsterHp = problem.monsterHp;
+  }
+
+  await saveTrustedPlayer(userId, player);
+  result.player = publicPlayer(player);
+  return result;
+});
+
+exports.buyItem = functions.region(REGION).https.onCall(async (data) => {
+  const { userId, player } = await resolvePlayerSession(data);
+  const itemName = cleanName(data?.itemName, 40);
+  const item = SHOP_ITEMS.find((i) => i.name === itemName);
+  if (!item) fail("없는 아이템입니다.", "not-found");
+
+  const isBetter =
+    (item.type === "w" && item.val > (player.atk || 0)) ||
+    (item.type === "a" && item.val > (player.comboRate || 0)) ||
+    (item.type === "x" && item.val > (player.bonusTime || 0)) ||
+    (item.type === "e" && item.val > (player.expBonus || 0));
+  if (!isBetter) fail("이미 더 좋은 장비를 장착 중입니다.", "failed-precondition");
+  if ((player.gold || 0) < item.price) fail("골드가 부족합니다.", "failed-precondition");
+
+  player.gold -= item.price;
+  if (item.type === "w") {
+    player.weapon = item.name;
+    player.atk = item.val;
+  } else if (item.type === "a") {
+    player.armor = item.name;
+    player.comboRate = item.val;
+  } else if (item.type === "x") {
+    player.acc = item.name;
+    player.bonusTime = item.val;
+  } else {
+    player.expItem = item.name;
+    player.expBonus = item.val;
+  }
+
+  await saveTrustedPlayer(userId, player);
   return { player: publicPlayer(player) };
 });
