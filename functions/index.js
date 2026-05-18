@@ -501,7 +501,7 @@ function makeProblemForLevel(lv) {
 
 exports.loginPlayer = functions
   .region(REGION)
-  .runWith({ maxInstances: 5, timeoutSeconds: 10 })
+  .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
   .https.onCall(async (data) => {
     const rawSchool = data?.school;
     const school    = normalizeSchool(rawSchool);
