@@ -46,10 +46,19 @@ function legacySchoolCandidates(raw) {
   for (const s of [trimmed, compact]) {
     if (!s) continue;
     variants.add(s);
+    if (!s.endsWith("초")) variants.add(`${s}초`);
     if (s.endsWith("초")) variants.add(`${s}등학교`);
     if (!s.endsWith("초등학교")) variants.add(`${s}초등학교`);
   }
   return [...variants].filter(Boolean);
+}
+
+function schoolCore(raw) {
+  return String(raw || "")
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/초등학교$/, "")
+    .replace(/초$/, "");
 }
 
 function cleanName(raw, max) {
@@ -89,13 +98,40 @@ function candidateUserIds(rawSchool, nickname) {
 async function findExistingPlayer(rawSchool, nickname, primaryUserId) {
   const ids = [primaryUserId, ...candidateUserIds(rawSchool, nickname)];
   const seen = new Set();
+  let best = null;
   for (const id of ids) {
     if (!id || seen.has(id)) continue;
     seen.add(id);
     const snap = await db.ref(`players/${id}`).get();
-    if (snap.exists()) return { userId: id, player: snap.val() };
+    if (snap.exists()) {
+      const player = snap.val();
+      if (!best || (player?.lv || 0) > (best.player?.lv || 0)) {
+        best = { userId: id, player };
+      }
+    }
   }
-  return { userId: primaryUserId, player: null };
+
+  if (best && (best.player?.lv || 0) > 5) return best;
+
+  const core = schoolCore(rawSchool);
+  if (core && nickname) {
+    const allSnap = await db.ref("players").get();
+    allSnap.forEach((child) => {
+      const key = child.key || "";
+      const player = child.val() || {};
+      const nick = String(player.nickname || "");
+      const school = String(player.school || "");
+      const keyMatches = key.includes(nickname) && key.includes(core);
+      const fieldMatches = nick === nickname && schoolCore(school).includes(core);
+      if (keyMatches || fieldMatches) {
+        if (!best || (player?.lv || 0) > (best.player?.lv || 0)) {
+          best = { userId: key, player };
+        }
+      }
+    });
+  }
+
+  return best || { userId: primaryUserId, player: null };
 }
 
 function passwordHash(userId, password) {
