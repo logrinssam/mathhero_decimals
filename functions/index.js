@@ -671,7 +671,9 @@ exports.submitAnswer = functions
     return result;
   });
 
-// ===== 리더보드 집계 (30분마다 Scheduled Function) =====
+// ===== 리더보드 집계 + 30분 캐시 =====
+const LEADERBOARD_TTL_MS = 30 * 60 * 1000;
+
 async function buildAndSaveLeaderboard() {
   const today = getToday();
   const snap  = await db.ref("leaderboard").orderByChild("lv").limitToLast(1500).get();
@@ -694,7 +696,10 @@ async function buildAndSaveLeaderboard() {
     .slice(0, 30)
     .map(([name, totalLv]) => ({ school: name, totalLv }));
 
-  await db.ref("cachedLeaderboard").set({ personal, daily, school, updatedAt: new Date().toISOString() });
+  await db.ref("cachedLeaderboard").set({
+    personal, daily, school,
+    updatedAt: Date.now(),
+  });
 }
 
 exports.scheduledLeaderboard = functions
