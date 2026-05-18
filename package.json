@@ -5,9 +5,16 @@
     "build": "node scripts/build.mjs",
     "build:light": "node scripts/build.mjs --light",
     "preview": "npx --yes serve . -l 5500",
-    "prepare:push": "npm run build"
+    "prepare:push": "npm run build",
+    "backfill-leaderboard": "node scripts/backfill-leaderboard.mjs",
+    "find-suspicious": "node scripts/find-suspicious.mjs",
+    "count-schools": "node scripts/count-schools.mjs",
+    "export-players": "npx firebase-tools database:get /players --project division-of-fractions --output scripts/players-export.json",
+    "deploy:functions": "firebase deploy --only functions",
+    "deploy:rules": "firebase deploy --only database"
   },
   "devDependencies": {
+    "firebase-admin": "^13.0.0",
     "javascript-obfuscator": "^4.1.1"
   }
 }
