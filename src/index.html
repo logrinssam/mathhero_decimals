@@ -243,7 +243,7 @@ function addKillSwitch() {
 
 // 👤 로그인 및 출석 로직 (비밀번호 추가 & 띄어쓰기 복구)
 window.processLogin = async function() {
-    let school = document.getElementById('school-name').value.trim();
+    let school = document.getElementById('school-name').value.trim().replace(/\s+/g,'');
     let nick = document.getElementById('user-nick').value.trim();
     let pw = document.getElementById('user-pw').value.trim(); 
 
