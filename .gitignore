@@ -2,3 +2,7 @@ node_modules/
 dist/
 index.html
 functions/node_modules/
+scripts/serviceAccountKey.json
+scripts/players-export.json
+scripts/leaderboard-upload.json
+serviceAccountKey.json
