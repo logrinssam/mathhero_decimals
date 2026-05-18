@@ -306,8 +306,6 @@ const MONSTER_DATA = [
 ];
 
 // ===== 매크로 차단 상수 =====
-const activeProblems  = new Map();
-
 const MINUTE_LIMIT    = 60;                          // 1분 최대 60회
 const DAILY_LIMIT     = 2000;                        // 하루 최대 2000회
 const MIN_INTERVAL_MS = 250;                         // 호출 최소 간격 0.25초 (연타만 거부)
@@ -475,6 +473,10 @@ async function saveTrustedPlayer(userId, player) {
   await db.ref().update(updates);
 }
 
+function activeProblemRef(userId) {
+  return db.ref(`activeProblems/${userId}`);
+}
+
 function pickMonsterForLevel(lv) {
   const available = MONSTER_DATA.filter((m) => lv >= m.reqLv);
   return available[Math.floor(Math.random() * available.length)] || MONSTER_DATA[0];
@@ -558,7 +560,8 @@ exports.getProblem = functions
     await saveTrustedPlayer(userId, player);
 
     const lv       = player.lv || 1;
-    const existing = activeProblems.get(userId);
+    const problemRef = activeProblemRef(userId);
+    const existing = (await problemRef.get()).val();
     let monster;
     if (existing && existing.monsterHp > 0) {
       monster = {
@@ -573,7 +576,7 @@ exports.getProblem = functions
     }
 
     const problem = makeProblemForLevel(lv);
-    activeProblems.set(userId, {
+    await problemRef.set({
       answer:       problem.answer,
       createdAt:    Date.now(),
       monsterName:  monster.name,
@@ -601,7 +604,8 @@ exports.submitAnswer = functions
 
     const now = Date.now();
 
-    const problem = activeProblems.get(userId);
+    const problemRef = activeProblemRef(userId);
+    const problem = (await problemRef.get()).val();
     if (!problem) fail("문제를 먼저 받아 주세요.", "not-found");
 
     const isCorrect = Math.abs(userAnswer - problem.answer) < 0.001;
@@ -643,16 +647,16 @@ exports.submitAnswer = functions
         result.monsterDefeated = true;
         result.goldReward      = goldReward;
         result.expReward       = expReward;
-        activeProblems.delete(userId);
+        await problemRef.remove();
       } else {
-        activeProblems.set(userId, problem);
+        await problemRef.set(problem);
         result.monsterHp = problem.monsterHp;
       }
     } else {
       player.curCombo = 0;
       player.hp       = (player.hp || 100) - 15;
       if (player.hp <= 0) player.hp = 30;
-      activeProblems.set(userId, problem);
+      await problemRef.set(problem);
       result.monsterHp = problem.monsterHp;
     }
 
