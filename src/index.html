@@ -147,7 +147,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, get, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 
@@ -168,15 +168,14 @@ initializeAppCheck(app, {
     isTokenAutoRefreshEnabled: true
 });
 
-const db = getDatabase(app);
-const functions = getFunctions(app, "asia-northeast3");
+const db         = getDatabase(app);
+const functions  = getFunctions(app, "asia-northeast3");
 
-// ✅ 기존 함수 2개 + 새 보안 함수 3개
-const loginPlayerFn = httpsCallable(functions, "loginPlayer");
-const savePlayerFn = httpsCallable(functions, "savePlayer");
-const getProblemFn = httpsCallable(functions, "getProblem");
+const loginPlayerFn  = httpsCallable(functions, "loginPlayer");
+const savePlayerFn   = httpsCallable(functions, "savePlayer");
+const getProblemFn   = httpsCallable(functions, "getProblem");
 const submitAnswerFn = httpsCallable(functions, "submitAnswer");
-const buyItemFn = httpsCallable(functions, "buyItem");
+const buyItemFn      = httpsCallable(functions, "buyItem");
 
 // ✅ XSS 방어 - HTML escape 함수
 function escapeHtml(str) {
@@ -238,12 +237,30 @@ const monsterData = [
 let gameState = {
     player: { nickname:"", school:"", lv:1, hp:100, maxHp:100, gold:0, exp:0, maxExp:50, atk:10, comboRate:0, bonusTime:5, expBonus:0, curCombo:0, isSecret:true, weapon:"무딘 검", armor:"평상복", acc:"없음", expItem:"없음", collection:{}, todayAns:0, lastDate:"" },
     currentMonster: { name:"", sprite:"", hp:0, maxHp:0 },
-    currentProblem: { q:"", start:0 },  // ✅ 정답(a)은 더 이상 클라이언트에 저장하지 않음!
+    currentProblem: { q:"", start:0 },
     isLoggedIn: false,
     lastAttackTime: 0,
     loginPassword: "",
-    isAttacking: false  // 중복 공격 방지
+    isAttacking: false
 };
+
+// 콘솔 매크로 차단: 실제 사용자 입력(isTrusted)이 있었는지 추적
+let lastTrustedEventAt = 0;
+const TRUSTED_WINDOW_MS = 8000; // 마지막 실제 입력으로부터 8초 이내만 허용
+
+document.addEventListener('DOMContentLoaded', () => {
+    const answerInput = document.getElementById('answer-input');
+    const attackBtn   = document.getElementById('attack-btn');
+
+    // 실제 키보드 입력 감지
+    answerInput.addEventListener('keydown', (e) => {
+        if (e.isTrusted) lastTrustedEventAt = Date.now();
+    });
+    // 실제 마우스/터치 클릭 감지
+    attackBtn.addEventListener('pointerdown', (e) => {
+        if (e.isTrusted) lastTrustedEventAt = Date.now();
+    });
+});
 
 // 👤 로그인 로직
 window.processLogin = async function() {
@@ -355,7 +372,10 @@ async function generateProblem() {
 window.handleAttack = async function() {
     if(!gameState.isLoggedIn) return;
     if(gameState.isAttacking) return;
-    
+
+    // 콘솔/자동화 매크로 차단: 실제 사용자 입력(isTrusted) 없으면 조용히 무시
+    if(Date.now() - lastTrustedEventAt > TRUSTED_WINDOW_MS) return;
+
     const now = Date.now();
     if(now - gameState.lastAttackTime < 400) return;
     gameState.lastAttackTime = now;
@@ -492,45 +512,46 @@ window.switchRankTab = async function(tabName) {
     document.getElementById('tab-personal').classList.toggle('active', tabName === 'personal');
     document.getElementById('tab-daily').classList.toggle('active', tabName === 'daily');
     document.getElementById('tab-school').classList.toggle('active', tabName === 'school');
-    
+
     document.getElementById('rank-list').classList.toggle('hidden', tabName !== 'personal');
     document.getElementById('daily-rank-list').classList.toggle('hidden', tabName !== 'daily');
     document.getElementById('school-rank-list').classList.toggle('hidden', tabName !== 'school');
-    
-    if(tabName === 'personal') {
-        const rankList = document.getElementById('rank-list'); rankList.innerHTML = "<p>로딩 중...</p>";
-        const snap = await get(query(ref(db, 'leaderboard'), orderByChild('lv'), limitToLast(50)));
-        let list = []; snap.forEach(c => { if(c.val().lv) list.push(c.val()); });
-        list.sort((a,b) => b.lv - a.lv);
-        // 서버에서 이미 마스킹된 닉네임을 전달함
-        rankList.innerHTML = list.map((p, i) => {
-            return `<div class="card"><span><b>${i+1}등</b>. ${escapeHtml(p.school)} [${escapeHtml(p.nickname || '')}]</span><b style="color:var(--a);">LV.${p.lv}</b></div>`;
-        }).join('');
-    } 
-    else if(tabName === 'daily') {
-        const dailyList = document.getElementById('daily-rank-list'); dailyList.innerHTML = "<p>집계 중...</p>";
-        const today = getToday(); 
-        
-        const snap = await get(query(ref(db, 'leaderboard'), orderByChild('todayAns'), limitToLast(1500)));
-        let list = []; 
-        snap.forEach(c => { 
-            const p = c.val(); 
-            if(p.lastDate === today && p.todayAns > 0) list.push(p); 
-        });
-        
-        list.sort((a,b) => b.todayAns - a.todayAns);
-        list = list.slice(0, 10);
-        
-        dailyList.innerHTML = list.length > 0 ? list.map((p, i) => {
-            return `<div class="card"><span><b>🔥 ${i+1}위</b>. ${escapeHtml(p.nickname || '')}</span><b style="color:var(--a);">${p.todayAns}개</b></div>`;
-        }).join('') : "<p style='text-align:center;'>아직 오늘 정답을 맞힌 용사가 없습니다!</p>";
-    } 
-    else {
-        const schoolList = document.getElementById('school-rank-list'); schoolList.innerHTML = "<p>집계 중...</p>";
-        const snap = await get(query(ref(db, 'leaderboard'), orderByChild('lv'), limitToLast(1500)));
-        const total = {}; snap.forEach(c => { const p = c.val(); if(p.school) total[p.school] = (total[p.school] || 0) + (p.lv || 0); });
-        const sorted = Object.entries(total).sort((a,b) => b[1] - a[1]).slice(0, 30);
-        schoolList.innerHTML = sorted.map((s, i) => `<div class="card"><span><b>${i+1}위</b>. ${escapeHtml(s[0])}</span><b style="color:var(--a);">${s[1]} LV</b></div>`).join('');
+
+    const targetEl = tabName === 'personal'
+        ? document.getElementById('rank-list')
+        : tabName === 'daily'
+            ? document.getElementById('daily-rank-list')
+            : document.getElementById('school-rank-list');
+
+    targetEl.innerHTML = "<p>로딩 중...</p>";
+
+    try {
+        const snap = await get(ref(db, 'cachedLeaderboard'));
+        const cached = snap.val();
+        if (!cached) {
+            targetEl.innerHTML = "<p style='text-align:center;'>랭킹 집계 중입니다. 잠시 후 다시 확인해 주세요.</p>";
+            return;
+        }
+        const { personal = [], daily = [], school = [] } = cached;
+
+        if(tabName === 'personal') {
+            targetEl.innerHTML = personal.map((p, i) =>
+                `<div class="card"><span><b>${i+1}등</b>. ${escapeHtml(p.school)} [${escapeHtml(p.nickname || '')}]</span><b style="color:var(--a);">LV.${p.lv}</b></div>`
+            ).join('');
+        } else if(tabName === 'daily') {
+            targetEl.innerHTML = daily.length > 0
+                ? daily.map((p, i) =>
+                    `<div class="card"><span><b>🔥 ${i+1}위</b>. ${escapeHtml(p.nickname || '')}</span><b style="color:var(--a);">${p.todayAns}개</b></div>`
+                  ).join('')
+                : "<p style='text-align:center;'>아직 오늘 정답을 맞힌 용사가 없습니다!</p>";
+        } else {
+            targetEl.innerHTML = school.map((s, i) =>
+                `<div class="card"><span><b>${i+1}위</b>. ${escapeHtml(s.school)}</span><b style="color:var(--a);">${s.totalLv} LV</b></div>`
+            ).join('');
+        }
+    } catch(e) {
+        console.error(e);
+        targetEl.innerHTML = "<p style='text-align:center;'>⚠️ 랭킹을 불러오지 못했습니다.</p>";
     }
 };
 
