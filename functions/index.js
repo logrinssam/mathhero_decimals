@@ -415,7 +415,7 @@ async function detectAnomalies(userId, isCorrect, elapsed) {
     if (data.recentTimes.length >= 5) {
       const avg      = data.recentTimes.reduce((a, b) => a + b, 0) / data.recentTimes.length;
       const variance = data.recentTimes.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / data.recentTimes.length;
-      if (variance < 0.5 && avg < 4.0) score += 2;
+      if (variance < 0.3 && avg < 3.3) score += 2;
     }
 
     // 신호 2: 500연속 정답 + 빠른 속도
@@ -427,13 +427,29 @@ async function detectAnomalies(userId, isCorrect, elapsed) {
     data.suspicionScore = Math.min(score, 20);
     await ref.update(data);
 
-    // 점수 10점 이상: 관리자 검토용 로그만 남김 (자동 차단 없음 — 오탐 위험)
+    // 관리자 검토용 로그 (점수 10점 이상)
     if (data.suspicionScore >= 10) {
       await db.ref(`suspiciousUsers/${userId}`).update({
         score:         data.suspicionScore,
         detectedAt:    new Date().toISOString(),
         correctStreak: data.correctStreak,
       });
+    }
+
+    // 자동 차단: 세 조건이 동시에 충족될 때만 (사람이 걸릴 수 없는 조건)
+    // ① 의심점수 15점 이상 (여러 신호가 반복 누적)
+    // ② 500연속 정답 유지 중
+    // → 이 둘이 동시에 성립하는 실제 학생은 없음
+    if (data.suspicionScore >= 15 && data.correctStreak > 500) {
+      const rlRef  = db.ref(`rateLimit/${userId}`);
+      const rlSnap = await rlRef.get();
+      const rl     = rlSnap.val() || {};
+      if (!rl.blockedUntil || Date.now() >= rl.blockedUntil) {
+        rl.violationCount = (rl.violationCount || 0) + 1;
+        const idx         = Math.min(rl.violationCount - 1, BLOCK_DURATIONS.length - 1);
+        rl.blockedUntil   = Date.now() + BLOCK_DURATIONS[idx];
+        await rlRef.update(rl);
+      }
     }
   } catch (e) {
     // 이상 탐지 실패해도 게임 진행에 영향 없도록 조용히 처리
