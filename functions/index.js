@@ -18,10 +18,11 @@ const ALLOWED_BONUS_TIME = new Set([5, 7, 9, 12, 16, 22]);
 const ALLOWED_EXP_BONUS = new Set([0, 50, 100, 200]);
 
 function getToday() {
-  const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+  // Cloud Functions는 UTC 기준 → KST(UTC+9) 변환하여 한국 자정에 리셋
+  const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const year  = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day   = String(d.getUTCDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
