@@ -61,7 +61,6 @@
     </style>
 </head>
 <body>
-<!-- ✅ Step 3: 개발자 도구 차단 코드 제거됨 (실효성 없고 UX만 해침. 진짜 보안은 서버에서) -->
 
 <div id="top-bar">
     <input type="text" id="school-name" placeholder="학교 (예: 화명초)" maxlength="20">
@@ -150,6 +149,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, get, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDUADGY2c1Y7BFQQVImgHqX92xjNbdGLXk",
@@ -161,15 +161,24 @@ const firebaseConfig = {
     appId: "1:549398586980:web:8af75b0d03c87eec39a171"
 };
 const app = initializeApp(firebaseConfig);
+
+// ✅ App Check: 매크로 프로그램 원천 차단 (웹사이트 외 호출 불가)
+initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider('6LdrTessAAAAAAhYC8DcVeCAb7AwF2Os5PvP9qb6'),
+    isTokenAutoRefreshEnabled: true
+});
+
 const db = getDatabase(app);
 const functions = getFunctions(app, "asia-northeast3");
+
+// ✅ 기존 함수 2개 + 새 보안 함수 3개
 const loginPlayerFn = httpsCallable(functions, "loginPlayer");
 const savePlayerFn = httpsCallable(functions, "savePlayer");
 const getProblemFn = httpsCallable(functions, "getProblem");
 const submitAnswerFn = httpsCallable(functions, "submitAnswer");
 const buyItemFn = httpsCallable(functions, "buyItem");
 
-// ✅ Step 1: XSS 방어 - HTML escape 함수
+// ✅ XSS 방어 - HTML escape 함수
 function escapeHtml(str) {
     if (str == null) return '';
     return String(str)
@@ -188,6 +197,7 @@ function getToday() {
     return `${year}-${month}-${day}`;
 }
 
+// 상점 아이템 - 디스플레이용 (실제 구매 검증은 서버)
 const shopItems = [
     {type:'w', icon:"🪵", name:"연습용 목검", desc:"시작보다 묵직한 타격감", price:100, val:15},
     {type:'w', icon:"🗡️", name:"소수점 단검", desc:"소수점 사이를 파고드는 날카로움", price:300, val:25},
@@ -228,26 +238,27 @@ const monsterData = [
 let gameState = {
     player: { nickname:"", school:"", lv:1, hp:100, maxHp:100, gold:0, exp:0, maxExp:50, atk:10, comboRate:0, bonusTime:5, expBonus:0, curCombo:0, isSecret:true, weapon:"무딘 검", armor:"평상복", acc:"없음", expItem:"없음", collection:{}, todayAns:0, lastDate:"" },
     currentMonster: { name:"", sprite:"", hp:0, maxHp:0 },
-    currentProblem: { q:"", start:0 },
+    currentProblem: { q:"", start:0 },  // ✅ 정답(a)은 더 이상 클라이언트에 저장하지 않음!
     isLoggedIn: false,
     lastAttackTime: 0,
     loginPassword: "",
-    isAttacking: false,
-    saveInFlight: false,
-    savePending: false
+    isAttacking: false  // 중복 공격 방지
 };
 
-function addKillSwitch() {
-    // 서버 저장 모드에서는 players 직접 읽기를 잠글 수 있어 실시간 킥은 이후 publicKick 노드로 분리합니다.
-}
-
-// 👤 로그인 및 출석 로직 (비밀번호 추가 & 띄어쓰기 복구)
+// 👤 로그인 로직
 window.processLogin = async function() {
     let school = document.getElementById('school-name').value.trim().replace(/\s+/g,'');
     let nick = document.getElementById('user-nick').value.trim();
     let pw = document.getElementById('user-pw').value.trim(); 
 
     if(!school || !nick) return alert("⚠️ 학교와 닉네임을 모두 입력해주세요!");
+
+    if(/[<>"'&\\\/]/.test(nick) || /[<>"'&\\\/]/.test(school)) {
+        return alert("⚠️ 닉네임/학교명에 특수문자(< > \" ' & \\ /)는 사용할 수 없습니다.");
+    }
+    if(nick.length < 1 || nick.length > 10) return alert("⚠️ 닉네임은 1~10자 사이로 입력해주세요.");
+    if(school.length > 20) return alert("⚠️ 학교명이 너무 깁니다.");
+
     if(pw && !/^[A-Za-z0-9]{4,12}$/.test(pw)) return alert("⚠️ 비밀번호는 영문/숫자 4~12자만 사용할 수 있습니다.");
     
     if(school.endsWith("초")) school += "등학교";
@@ -267,7 +278,6 @@ window.processLogin = async function() {
         if(result.data.locked && pw) alert("🔒 비밀번호 보호가 적용되었습니다.");
         
         gameState.isLoggedIn = true;
-        addKillSwitch();
         document.getElementById('game-container').classList.remove('is-locked');
         document.getElementById('start-button').innerText = "접속 완료";
         document.getElementById('start-button').disabled = true;
@@ -276,74 +286,94 @@ window.processLogin = async function() {
         document.getElementById('user-pw').disabled = true; 
         document.getElementById('secret-toggle').checked = gameState.player.isSecret;
         
-        await generateProblem();
+        updateUI();
+        await generateProblem();  // ✅ 서버에서 첫 문제 받아오기
     } catch(e) {
         console.error(e);
         alert(e.message || "연결 실패! 인터넷 환경을 확인하세요.");
     }
 };
 
-window.toggleSecret = function() {
+window.toggleSecret = async function() {
     if(!gameState.isLoggedIn) return;
     gameState.player.isSecret = document.getElementById('secret-toggle').checked;
-    saveData();
-};
-
-async function saveData() {
-    if(!gameState.isLoggedIn) return;
-    if(gameState.saveInFlight) {
-        gameState.savePending = true;
-        return;
-    }
-    gameState.saveInFlight = true;
-    let p = gameState.player;
-    if (p.comboRate > 120) p.comboRate = 120;
-    if (p.bonusTime > 22) p.bonusTime = 22;
-    if (p.expBonus > 200) p.expBonus = 200;
-    if (p.atk > 1550) p.atk = 1550;
-    if (p.todayAns > 100000) p.todayAns = 100000;
-    if (p.lv > 2000) p.lv = 2000;
-
     try {
-        const result = await savePlayerFn({ player: p, password: gameState.loginPassword });
-        gameState.player = result.data.player;
+        const result = await savePlayerFn({ 
+            player: gameState.player, 
+            password: gameState.loginPassword 
+        });
+        if(result.data.player) gameState.player = result.data.player;
         updateUI();
     } catch(e) {
         console.error(e);
-        alert(e.message || "저장 실패! 잠시 후 다시 시도해 주세요.");
-    } finally {
-        gameState.saveInFlight = false;
-        if(gameState.savePending) {
-            gameState.savePending = false;
-            saveData();
-        }
     }
-}
+};
 
 function logMessage(msg) {
     const logDiv = document.getElementById('battle-log');
-    // ✅ Step 1: 로그도 escape (혹시 사용자 데이터가 섞일 경우 대비)
     logDiv.innerHTML = `<div>&gt; ${escapeHtml(msg)}</div>` + logDiv.innerHTML;
 }
 
+// ✅ 핵심: 서버에서 문제 받아오기 (정답은 서버 메모리에만 존재)
+async function generateProblem() {
+    if(!gameState.isLoggedIn) return;
+    try {
+        const result = await getProblemFn({
+            school: gameState.player.school,
+            nickname: gameState.player.nickname,
+            password: gameState.loginPassword
+        });
+        const data = result.data;
+        gameState.currentProblem = { q: data.question, start: Date.now() };
+        
+        // 몬스터 정보 동기화
+        const m = monsterData.find(x => x.name === data.monster.name);
+        gameState.currentMonster = {
+            name: data.monster.name,
+            sprite: m ? m.sprite : '👾',
+            hp: data.monster.hp,
+            maxHp: data.monster.maxHp
+        };
+        
+        document.getElementById('p-text').innerText = data.question;
+        document.getElementById('m-name').innerText = gameState.currentMonster.name;
+        document.getElementById('m-sprite').innerText = gameState.currentMonster.sprite;
+        
+        if(data.player) {
+            gameState.player = { ...gameState.player, ...data.player };
+        }
+        
+        document.getElementById('answer-input').focus();
+        updateUI();
+    } catch(e) {
+        console.error(e);
+        document.getElementById('p-text').innerText = "⚠️ 연결 오류! 새로고침 해주세요.";
+    }
+}
+
+// ✅ 핵심: 서버에 답 제출 (모든 계산은 서버에서)
 window.handleAttack = async function() {
     if(!gameState.isLoggedIn) return;
     if(gameState.isAttacking) return;
-
+    
     const now = Date.now();
     if(now - gameState.lastAttackTime < 400) return;
     gameState.lastAttackTime = now;
 
     const input = document.getElementById('answer-input');
     const rawValue = input.value.trim();
-
-    // ✅ Step 2: 입력값 안정성 강화
+    
     if(rawValue.length === 0 || rawValue.length > 10) { input.value = ""; return; }
-    if(!/^-?\d*\.?\d+$/.test(rawValue)) { input.value = ""; return; }  // 숫자/소수점/음수만 허용
-
+    if(!/^-?\d*\.?\d+$/.test(rawValue)) { input.value = ""; return; }
+    const userAnswer = parseFloat(rawValue);
+    if(isNaN(userAnswer) || !isFinite(userAnswer) || Math.abs(userAnswer) > 10000) {
+        input.value = "";
+        return;
+    }
+    
     gameState.isAttacking = true;
     document.getElementById('attack-btn').disabled = true;
-
+    
     try {
         const result = await submitAnswerFn({
             school: gameState.player.school,
@@ -351,36 +381,44 @@ window.handleAttack = async function() {
             password: gameState.loginPassword,
             answer: rawValue
         });
-
-        gameState.player = result.data.player;
-        if(!gameState.player.collection) gameState.player.collection = {};
-
-        if(result.data.correct) {
-            if(result.data.timeBonus) logMessage("⚡ 신속 공격! 데미지 2배!");
-            logMessage(`🗡️ ${result.data.damage} 데미지!`);
+        const data = result.data;
+        
+        if(data.player) {
+            gameState.player = { ...gameState.player, ...data.player };
+        }
+        
+        if(data.correct) {
+            if(data.timeBonus) logMessage("⚡ 신속 공격! 데미지 2배!");
+            logMessage(`🗡️ ${data.damage} 데미지!`);
             document.getElementById('m-sprite').classList.add('monster-hit');
             setTimeout(() => document.getElementById('m-sprite').classList.remove('monster-hit'), 400);
-
-            if(result.data.monsterDefeated) {
-                logMessage(`💰 +${result.data.goldReward}G, ✨ +${result.data.expReward} EXP`);
-                if(result.data.levelUp) alert(`🎊 레벨 업! LV.${gameState.player.lv}`);
-            } else {
-                gameState.currentMonster.hp = result.data.monsterHp;
+            
+            if(data.monsterDefeated) {
+                logMessage(`💰 +${data.goldReward}G, ✨ +${data.expReward} EXP`);
+                if(data.levelUp) alert(`🎊 레벨 업! LV.${gameState.player.lv}`);
+            } else if(data.monsterHp !== undefined) {
+                gameState.currentMonster.hp = data.monsterHp;
             }
         } else {
-            logMessage(`😭 오답! -15 HP (정답: ${result.data.correctAnswer})`);
+            logMessage(`😭 오답! -15 HP (정답: ${data.correctAnswer})`);
             document.getElementById('monster-area').classList.add('screen-flash');
             setTimeout(() => document.getElementById('monster-area').classList.remove('screen-flash'), 400);
+            if(data.monsterHp !== undefined) gameState.currentMonster.hp = data.monsterHp;
         }
-
+        
         input.value = "";
         updateUI();
         await generateProblem();
     } catch(e) {
-        if(e.code === 'functions/resource-exhausted') alert("🤖 너무 빠릅니다!");
-        else {
-            console.error(e);
-            alert("오류: " + (e.message || "알 수 없는 오류"));
+        console.error(e);
+        const msg = e.message || "";
+        if(e.code === 'functions/resource-exhausted' || msg.includes("너무 빠릅니다")) {
+            gameState.player.curCombo = 0;
+            updateUI();
+        } else if(e.code === 'functions/not-found' && msg.includes("문제")) {
+            await generateProblem();
+        } else {
+            alert("오류: " + msg);
         }
         input.value = "";
     } finally {
@@ -389,30 +427,6 @@ window.handleAttack = async function() {
     }
 };
 
-async function generateProblem() {
-    try {
-        const result = await getProblemFn({
-            school: gameState.player.school,
-            nickname: gameState.player.nickname,
-            password: gameState.loginPassword
-        });
-        gameState.player = result.data.player || gameState.player;
-        if(!gameState.player.collection) gameState.player.collection = {};
-        gameState.currentProblem = { q: result.data.question, start: Date.now() };
-        gameState.currentMonster = result.data.monster;
-        document.getElementById('p-text').innerText = result.data.question;
-        document.getElementById('m-name').innerText = gameState.currentMonster.name;
-        const m = monsterData.find(x => x.name === gameState.currentMonster.name);
-        document.getElementById('m-sprite').innerText = m ? m.sprite : '👾';
-        document.getElementById('answer-input').focus();
-        updateUI();
-    } catch(e) {
-        console.error(e);
-        alert("문제 로딩 실패: " + (e.message || "알 수 없는 오류"));
-    }
-}
-
-// ✅ Step 1: 상점 렌더링 - 아이템 데이터는 신뢰 가능하지만 일관성을 위해 escape 적용
 function renderShop() {
     let html = "";
     shopItems.forEach(item => {
@@ -423,36 +437,44 @@ function renderShop() {
         html += `<div class="card"><div style="flex:1;"><span class="tag ${tagClass}">${typeName} ${item.icon}</span><br><b>${escapeHtml(item.name)}</b><br><small>${escapeHtml(item.desc)}</small><br><b>효과: ${effectDesc}</b></div><button class="action-btn" style="background:#4caf50;" data-item="${escapeHtml(item.name)}">${item.price}G</button></div>`;
     });
     document.getElementById('shop-list').innerHTML = html;
-
+    
+    // ✅ 이벤트 위임 (XSS 안전)
     document.getElementById('shop-list').querySelectorAll('button[data-item]').forEach(btn => {
         btn.addEventListener('click', () => buyItem(btn.dataset.item));
     });
 }
 
+// ✅ 핵심: 서버에서 구매 처리 (골드 검증, 장비 변경)
 window.buyItem = async function(itemName) {
+    if(!gameState.isLoggedIn) return;
     try {
         const result = await buyItemFn({
             school: gameState.player.school,
             nickname: gameState.player.nickname,
             password: gameState.loginPassword,
-            itemName
+            itemName: itemName
         });
-        gameState.player = result.data.player;
-        if(!gameState.player.collection) gameState.player.collection = {};
+        if(result.data.player) {
+            gameState.player = { ...gameState.player, ...result.data.player };
+        }
         updateUI();
         renderShop();
         alert(`✨ ${itemName} 장착 완료!`);
     } catch(e) {
-        if(e.code === 'functions/failed-precondition') alert("⚠️ " + e.message);
-        else alert("구매 실패: " + (e.message || ""));
+        console.error(e);
+        const msg = e.message || "구매 실패";
+        if(e.code === 'functions/failed-precondition') {
+            alert("⚠️ " + msg);
+        } else {
+            alert("구매 실패: " + msg);
+        }
     }
 };
 
-// ✅ Step 1: 도감 렌더링 - 몬스터 데이터는 신뢰 가능하지만 일관성을 위해 escape 적용
 function renderCollection() {
     const p = gameState.player;
     document.getElementById('collection-grid').innerHTML = monsterData.map(m => {
-        const killed = p.collection[m.name] || 0;
+        const killed = (p.collection && p.collection[m.name]) || 0;
         return `<div class="card" style="flex-direction:column; text-align:center;"><div style="font-size:3.5em;">${killed > 0 ? m.sprite : '❓'}</div><b>${killed > 0 ? escapeHtml(m.name) : '???'}</b><br><small>${killed > 0 ? escapeHtml(m.desc) : '🔒 LV.' + m.reqLv + ' 해금'}</small><br><div style="color:var(--a);">처치: ${killed}마리</div></div>`;
     }).join('');
 }
@@ -466,7 +488,6 @@ window.showScreen = function(screenName) {
     if(screenName === 'collection') renderCollection();
 };
 
-// ✅ Step 1: 랭킹 렌더링 - 사용자 입력 데이터는 반드시 escape (XSS 핵심 방어)
 window.switchRankTab = async function(tabName) {
     document.getElementById('tab-personal').classList.toggle('active', tabName === 'personal');
     document.getElementById('tab-daily').classList.toggle('active', tabName === 'daily');
@@ -481,10 +502,9 @@ window.switchRankTab = async function(tabName) {
         const snap = await get(query(ref(db, 'leaderboard'), orderByChild('lv'), limitToLast(50)));
         let list = []; snap.forEach(c => { if(c.val().lv) list.push(c.val()); });
         list.sort((a,b) => b.lv - a.lv);
+        // 서버에서 이미 마스킹된 닉네임을 전달함
         rankList.innerHTML = list.map((p, i) => {
-            let nick = p.nickname; if(p.isSecret !== false) nick = nick.length > 2 ? nick[0] + "★".repeat(nick.length - 2) + nick[nick.length - 1] : nick[0] + "★";
-            // ✅ Step 1: escapeHtml 적용
-            return `<div class="card"><span><b>${i+1}등</b>. ${escapeHtml(p.school)} [${escapeHtml(nick)}]</span><b style="color:var(--a);">LV.${p.lv}</b></div>`;
+            return `<div class="card"><span><b>${i+1}등</b>. ${escapeHtml(p.school)} [${escapeHtml(p.nickname || '')}]</span><b style="color:var(--a);">LV.${p.lv}</b></div>`;
         }).join('');
     } 
     else if(tabName === 'daily') {
@@ -502,9 +522,7 @@ window.switchRankTab = async function(tabName) {
         list = list.slice(0, 10);
         
         dailyList.innerHTML = list.length > 0 ? list.map((p, i) => {
-            let nick = p.nickname; if(p.isSecret !== false) nick = nick.length > 2 ? nick[0] + "★".repeat(nick.length - 2) + nick[nick.length - 1] : nick[0] + "★";
-            // ✅ Step 1: escapeHtml 적용
-            return `<div class="card"><span><b>🔥 ${i+1}위</b>. ${escapeHtml(nick)}</span><b style="color:var(--a);">${p.todayAns}개</b></div>`;
+            return `<div class="card"><span><b>🔥 ${i+1}위</b>. ${escapeHtml(p.nickname || '')}</span><b style="color:var(--a);">${p.todayAns}개</b></div>`;
         }).join('') : "<p style='text-align:center;'>아직 오늘 정답을 맞힌 용사가 없습니다!</p>";
     } 
     else {
@@ -512,7 +530,6 @@ window.switchRankTab = async function(tabName) {
         const snap = await get(query(ref(db, 'leaderboard'), orderByChild('lv'), limitToLast(1500)));
         const total = {}; snap.forEach(c => { const p = c.val(); if(p.school) total[p.school] = (total[p.school] || 0) + (p.lv || 0); });
         const sorted = Object.entries(total).sort((a,b) => b[1] - a[1]).slice(0, 30);
-        // ✅ Step 1: escapeHtml 적용
         schoolList.innerHTML = sorted.map((s, i) => `<div class="card"><span><b>${i+1}위</b>. ${escapeHtml(s[0])}</span><b style="color:var(--a);">${s[1]} LV</b></div>`).join('');
     }
 };
