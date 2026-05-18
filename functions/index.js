@@ -108,7 +108,9 @@ function passwordHash(userId, password) {
 function normalizePassword(raw) {
   const pw = String(raw || "").trim();
   if (!pw) return "";
-  if (!/^\d{4}$/.test(pw)) fail("비밀번호는 숫자 4자리만 사용할 수 있습니다.");
+  if (!/^[A-Za-z0-9]{4,12}$/.test(pw)) {
+    fail("비밀번호는 영문/숫자 4~12자만 사용할 수 있습니다.");
+  }
   return pw;
 }
 

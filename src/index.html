@@ -81,12 +81,12 @@ document.addEventListener('keydown', function(e) {
 <div id="top-bar">
     <input type="text" id="school-name" placeholder="학교 (예: 화명초)">
     <input type="text" id="user-nick" placeholder="닉네임">
-    <input type="password" id="user-pw" placeholder="비번(선택)" maxlength="4" style="font-family: 'Jua'; padding: 8px; border: 3px solid var(--p); border-radius: 12px; text-align: center; width: 110px; font-size: 1rem;">
+    <input type="password" id="user-pw" placeholder="비번(선택)" maxlength="12" style="font-family: 'Jua'; padding: 8px; border: 3px solid var(--p); border-radius: 12px; text-align: center; width: 110px; font-size: 1rem;">
     <button class="btn-start" id="start-button" onclick="processLogin()">모험 시작!</button>
 </div>
 <div id="notice-banner">
-    📢 <b>[내 캐릭터 지키기]</b> 다른 사람이 내 아이디로 들어오는 걸 막으려면 🔒<b>비밀번호(숫자 4자리)</b>를 적고 시작해요!<br>
-    <span style="font-size: 0.85em; font-weight: normal; color: #d84315;">(비밀번호는 선택사항입니다. 잃어버리면 안 되니 기억하기 쉬운 숫자로 정하세요!)</span>
+    📢 <b>[내 캐릭터 지키기]</b> 다른 사람이 내 아이디로 들어오는 걸 막으려면 🔒<b>비밀번호(영문/숫자 4~12자)</b>를 적고 시작해요!<br>
+    <span style="font-size: 0.85em; font-weight: normal; color: #d84315;">(비밀번호는 선택사항입니다. 잃어버리면 안 되니 기억하기 쉬운 글자와 숫자로 정하세요!)</span>
     <span class="close-notice" onclick="this.parentElement.style.display='none'">X</span>
 </div>
 
@@ -248,7 +248,7 @@ window.processLogin = async function() {
     let pw = document.getElementById('user-pw').value.trim(); 
 
     if(!school || !nick) return alert("⚠️ 학교와 닉네임을 모두 입력해주세요!");
-    if(pw && !/^\d{4}$/.test(pw)) return alert("⚠️ 비밀번호는 숫자 4자리만 사용할 수 있습니다.");
+    if(pw && !/^[A-Za-z0-9]{4,12}$/.test(pw)) return alert("⚠️ 비밀번호는 영문/숫자 4~12자만 사용할 수 있습니다.");
     
     if(school.endsWith("초")) school += "등학교";
     else if(!school.endsWith("초등학교")) school += "초등학교";
