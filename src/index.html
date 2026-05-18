@@ -351,11 +351,9 @@ async function generateProblem() {
 }
 
 // ✅ 핵심: 서버에 답 제출 (모든 계산은 서버에서)
-window.handleAttack = async function(e) {
+async function submitAttack() {
     if(!gameState.isLoggedIn) return;
     if(gameState.isAttacking) return;
-    // 콘솔 매크로 차단: 실제 사용자 이벤트(isTrusted)가 없으면 조용히 무시
-    if(!e || !e.isTrusted) return;
 
     const input = document.getElementById('answer-input');
     const rawValue = input.value.trim();
@@ -422,16 +420,22 @@ window.handleAttack = async function(e) {
         gameState.isAttacking = false;
         document.getElementById('attack-btn').disabled = false;
     }
+}
+
+// 콘솔에서 handleAttack()을 직접 호출하는 경우는 차단한다.
+window.handleAttack = async function(e) {
+    if(!e || !e.isTrusted) return;
+    return submitAttack();
 };
 
 document.getElementById('attack-btn').addEventListener('click', (e) => {
-    window.handleAttack(e);
+    submitAttack();
 });
 
 document.getElementById('answer-input').addEventListener('keydown', (e) => {
     if(e.key === 'Enter' && !e.isComposing) {
         e.preventDefault();
-        window.handleAttack(e);
+        submitAttack();
     }
 });
 
