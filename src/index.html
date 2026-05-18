@@ -245,21 +245,15 @@ let gameState = {
 };
 
 // 콘솔 매크로 차단: 실제 사용자 입력(isTrusted)이 있었는지 추적
+// (module 스크립트는 DOM 준비 후 실행되므로 DOMContentLoaded 불필요)
 let lastTrustedEventAt = 0;
-const TRUSTED_WINDOW_MS = 8000; // 마지막 실제 입력으로부터 8초 이내만 허용
+const TRUSTED_WINDOW_MS = 8000;
 
-document.addEventListener('DOMContentLoaded', () => {
-    const answerInput = document.getElementById('answer-input');
-    const attackBtn   = document.getElementById('attack-btn');
-
-    // 실제 키보드 입력 감지
-    answerInput.addEventListener('keydown', (e) => {
-        if (e.isTrusted) lastTrustedEventAt = Date.now();
-    });
-    // 실제 마우스/터치 클릭 감지
-    attackBtn.addEventListener('pointerdown', (e) => {
-        if (e.isTrusted) lastTrustedEventAt = Date.now();
-    });
+document.getElementById('answer-input').addEventListener('keydown', (e) => {
+    if (e.isTrusted) lastTrustedEventAt = Date.now();
+});
+document.getElementById('attack-btn').addEventListener('pointerdown', (e) => {
+    if (e.isTrusted) lastTrustedEventAt = Date.now();
 });
 
 // 👤 로그인 로직
