@@ -408,7 +408,7 @@ async function submitAttack() {
         console.error(e);
         const msg = e.message || "";
         if(e.code === 'functions/resource-exhausted' || msg.includes("너무 빠릅니다")) {
-            gameState.player.curCombo = 0;
+            logMessage(msg || "잠깐만 천천히 눌러 주세요.");
             updateUI();
         } else if(e.code === 'functions/not-found' && msg.includes("문제")) {
             await generateProblem();
