@@ -111,8 +111,8 @@
             </div>
             <div id="problem-banner"><span id="p-text">로그인 해주세요!</span></div>
             <div style="display:flex; justify-content:center; align-items:center;">
-                <input type="text" id="answer-input" placeholder="정답" autocomplete="off" maxlength="10" onkeypress="if(event.keyCode==13) handleAttack(event)">
-                <button class="action-btn btn-attack" id="attack-btn" onclick="handleAttack(event)">공격!</button>
+                <input type="text" id="answer-input" placeholder="정답" autocomplete="off" maxlength="10">
+                <button type="button" class="action-btn btn-attack" id="attack-btn">공격!</button>
             </div>
             <div id="battle-log" style="margin-top:20px; height:80px; overflow-y:auto; border-top:2px solid #eee; padding-top:10px; font-size:0.95em; color:#888;"></div>
         </div>
@@ -239,7 +239,6 @@ let gameState = {
     currentMonster: { name:"", sprite:"", hp:0, maxHp:0 },
     currentProblem: { q:"", start:0 },
     isLoggedIn: false,
-    lastAttackTime: 0,
     loginPassword: "",
     isAttacking: false
 };
@@ -358,10 +357,6 @@ window.handleAttack = async function(e) {
     // 콘솔 매크로 차단: 실제 사용자 이벤트(isTrusted)가 없으면 조용히 무시
     if(!e || !e.isTrusted) return;
 
-    const now = Date.now();
-    if(now - gameState.lastAttackTime < 400) return;
-    gameState.lastAttackTime = now;
-
     const input = document.getElementById('answer-input');
     const rawValue = input.value.trim();
     
@@ -428,6 +423,17 @@ window.handleAttack = async function(e) {
         document.getElementById('attack-btn').disabled = false;
     }
 };
+
+document.getElementById('attack-btn').addEventListener('click', (e) => {
+    handleAttack(e);
+});
+
+document.getElementById('answer-input').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' && !e.isComposing) {
+        e.preventDefault();
+        handleAttack(e);
+    }
+});
 
 function renderShop() {
     let html = "";
