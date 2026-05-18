@@ -108,27 +108,6 @@ async function findExistingPlayer(rawSchool, nickname, primaryUserId) {
       }
     }
   }
-
-  if (best && (best.player?.lv || 0) > 5) return best;
-
-  const core = schoolCore(rawSchool);
-  if (core && nickname) {
-    const allSnap = await db.ref("players").get();
-    allSnap.forEach((child) => {
-      const key = child.key || "";
-      const player = child.val() || {};
-      const nick = String(player.nickname || "");
-      const school = String(player.school || "");
-      const keyMatches = key.includes(nickname) && key.includes(core);
-      const fieldMatches = nick === nickname && schoolCore(school).includes(core);
-      if (keyMatches || fieldMatches) {
-        if (!best || (player?.lv || 0) > (best.player?.lv || 0)) {
-          best = { userId: key, player };
-        }
-      }
-    });
-  }
-
   return best || { userId: primaryUserId, player: null };
 }
 
@@ -329,9 +308,9 @@ const MONSTER_DATA = [
 const activeProblems  = new Map();
 const lastAttackTime  = new Map();
 
-const MINUTE_LIMIT    = 40;                          // 1분 최대 40회
+const MINUTE_LIMIT    = 20;                          // 1분 최대 20회
 const DAILY_LIMIT     = 2000;                        // 하루 최대 2000회
-const MIN_INTERVAL_MS = 1500;                        // 호출 최소 간격 1.5초 (DB 저장)
+const MIN_INTERVAL_MS = 3000;                        // 호출 최소 간격 3초 (DB 저장)
 const BLOCK_DURATIONS = [
   60  * 60 * 1000,                                   // 1차 위반: 1시간
   6   * 60 * 60 * 1000,                              // 2차 위반: 6시간
@@ -432,20 +411,23 @@ async function detectAnomalies(userId, isCorrect, elapsed) {
 
     let score = data.suspicionScore || 0;
 
-    // 의심 신호 1: 응답시간 분산 거의 없음 = 자동화
+    // 신호 1: 응답시간 분산 작음 (자동화 패턴)
     if (data.recentTimes.length >= 5) {
       const avg      = data.recentTimes.reduce((a, b) => a + b, 0) / data.recentTimes.length;
       const variance = data.recentTimes.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / data.recentTimes.length;
-      if (variance < 0.05 && avg < 1.0) score += 2;
+      if (variance < 0.5 && avg < 4.0) score += 2;
     }
 
-    // 의심 신호 2: 연속 500개 이상 + 빠른 속도
-    if (data.correctStreak > 500 && elapsed < 1.5) score += 5;
+    // 신호 2: 500연속 정답 + 빠른 속도
+    if (data.correctStreak > 500 && elapsed < 5.0) score += 5;
+
+    // 오답 발생 시 점수 감쇠 (정상 학생 보호)
+    if (!isCorrect) score = Math.max(0, score - 2);
 
     data.suspicionScore = Math.min(score, 20);
     await ref.update(data);
 
-    // 의심점수 10 이상이면 suspiciousUsers 노드에 기록 (GAS 시트에서 확인)
+    // 점수 10점 이상: 관리자 검토용 로그만 남김 (자동 차단 없음 — 오탐 위험)
     if (data.suspicionScore >= 10) {
       await db.ref(`suspiciousUsers/${userId}`).update({
         score:         data.suspicionScore,
@@ -671,6 +653,39 @@ exports.submitAnswer = functions
     await saveTrustedPlayer(userId, player);
     result.player = publicPlayer(player);
     return result;
+  });
+
+// ===== 리더보드 집계 (30분마다 Scheduled Function) =====
+async function buildAndSaveLeaderboard() {
+  const today = getToday();
+  const snap  = await db.ref("leaderboard").orderByChild("lv").limitToLast(1500).get();
+  const all   = [];
+  snap.forEach((c) => { if (c.val()?.lv) all.push(c.val()); });
+
+  const personal = [...all].sort((a, b) => b.lv - a.lv).slice(0, 50);
+
+  const daily = [...all]
+    .filter((p) => p.lastDate === today && p.todayAns > 0)
+    .sort((a, b) => b.todayAns - a.todayAns)
+    .slice(0, 10);
+
+  const schoolMap = {};
+  all.forEach((p) => {
+    if (p.school) schoolMap[p.school] = (schoolMap[p.school] || 0) + (p.lv || 0);
+  });
+  const school = Object.entries(schoolMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 30)
+    .map(([name, totalLv]) => ({ school: name, totalLv }));
+
+  await db.ref("cachedLeaderboard").set({ personal, daily, school, updatedAt: new Date().toISOString() });
+}
+
+exports.scheduledLeaderboard = functions
+  .pubsub.schedule("every 30 minutes")
+  .timeZone("Asia/Seoul")
+  .onRun(async () => {
+    await buildAndSaveLeaderboard();
   });
 
 exports.buyItem = functions
