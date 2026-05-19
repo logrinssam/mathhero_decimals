@@ -306,9 +306,9 @@ const MONSTER_DATA = [
 ];
 
 // ===== 매크로 차단 상수 =====
-const MINUTE_LIMIT    = 60;                          // 1분 최대 60회
+const MINUTE_LIMIT    = 90;                          // 1분 최대 90회
 const DAILY_LIMIT     = 2000;                        // 하루 최대 2000회
-const MIN_INTERVAL_MS = 250;                         // 호출 최소 간격 0.25초 (연타만 거부)
+const MIN_INTERVAL_MS = 200;                         // 호출 최소 간격 0.2초 (연타만 거부)
 const BLOCK_DURATIONS = [
   60  * 60 * 1000,                                   // 1차 위반: 1시간
   6   * 60 * 60 * 1000,                              // 2차 위반: 6시간
