@@ -95,12 +95,18 @@ function candidateUserIds(rawSchool, nickname) {
 }
 
 async function findExistingPlayer(rawSchool, nickname, primaryUserId) {
+  const primarySnap = await db.ref(`players/${primaryUserId}`).get();
+  if (primarySnap.exists()) {
+    return { userId: primaryUserId, player: primarySnap.val() };
+  }
+
   const ids = [primaryUserId, ...candidateUserIds(rawSchool, nickname)];
   const seen = new Set();
   let best = null;
   for (const id of ids) {
     if (!id || seen.has(id)) continue;
     seen.add(id);
+    if (id === primaryUserId) continue;
     const snap = await db.ref(`players/${id}`).get();
     if (snap.exists()) {
       const player = snap.val();
@@ -593,8 +599,6 @@ exports.submitAnswer = functions
   .https.onCall(async (data, context) => {                    // ✅ context 추가
     const { userId, player } = await resolvePlayerSession(data);
 
-    await checkRateLimit(userId);                              // ✅ Rate Limit 체크
-
     const rawAnswer = String(data?.answer ?? "").trim();
     if (!/^-?\d*\.?\d+$/.test(rawAnswer)) fail("잘못된 답입니다.");
     const userAnswer = Number.parseFloat(rawAnswer);
@@ -605,12 +609,15 @@ exports.submitAnswer = functions
     const now = Date.now();
 
     const problemRef = activeProblemRef(userId);
-    const problem = (await problemRef.get()).val();
+    const problemSnapPromise = problemRef.get();
+    await checkRateLimit(userId);                              // ✅ Rate Limit 체크
+    const problem = (await problemSnapPromise).val();
     if (!problem) fail("문제를 먼저 받아 주세요.", "not-found");
 
     const isCorrect = Math.abs(userAnswer - problem.answer) < 0.001;
     const elapsed   = (now - problem.createdAt) / 1000;
     const result    = { correct: isCorrect, correctAnswer: problem.answer };
+    let problemWritePromise;
 
     if (isCorrect) {
       player.curCombo  = (player.curCombo || 0) + 1;
@@ -647,21 +654,24 @@ exports.submitAnswer = functions
         result.monsterDefeated = true;
         result.goldReward      = goldReward;
         result.expReward       = expReward;
-        await problemRef.remove();
+        problemWritePromise    = problemRef.remove();
       } else {
-        await problemRef.set(problem);
+        problemWritePromise = problemRef.set(problem);
         result.monsterHp = problem.monsterHp;
       }
     } else {
       player.curCombo = 0;
       player.hp       = (player.hp || 100) - 15;
       if (player.hp <= 0) player.hp = 30;
-      await problemRef.set(problem);
+      problemWritePromise = problemRef.set(problem);
       result.monsterHp = problem.monsterHp;
     }
 
-    await detectAnomalies(userId, isCorrect, elapsed);         // ✅ 이상 탐지
-    await saveTrustedPlayer(userId, player);
+    await Promise.all([
+      problemWritePromise,
+      detectAnomalies(userId, isCorrect, elapsed),             // ✅ 이상 탐지
+      saveTrustedPlayer(userId, player),
+    ]);
     result.player = publicPlayer(player);
     return result;
   });

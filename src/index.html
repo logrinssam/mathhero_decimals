@@ -30,10 +30,10 @@
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         @keyframes flashRed { 0% { background-color: #ffcdd2; } 100% { background-color: #e8f5e9; } }
         
-        .monster-hit { animation: shake 0.4s ease-in-out; }
-        .screen-flash { animation: flashRed 0.4s ease-in-out; }
+        .monster-hit { animation: shake 0.18s ease-in-out; }
+        .screen-flash { animation: flashRed 0.2s ease-in-out; }
         .bar-bg { width: 100%; height: 26px; background: #eee; border-radius: 13px; border: 3px solid #ccc; position: relative; overflow: hidden; }
-        .bar-fill { height: 100%; transition: width 0.4s; background: var(--a); }
+        .bar-fill { height: 100%; transition: width 0.12s ease-out; background: var(--a); }
         
         #monster-area { padding: 20px; border-radius: 25px; text-align: center; margin-bottom: 15px; border: 5px solid #c8e6c9; background: #e8f5e9; position: relative; }
         #m-sprite { font-size: 6.5em; display: inline-block; margin: 10px 0; } 
@@ -386,7 +386,7 @@ async function submitAttack() {
             if(data.timeBonus) logMessage("⚡ 신속 공격! 데미지 2배!");
             logMessage(`🗡️ ${data.damage} 데미지!`);
             document.getElementById('m-sprite').classList.add('monster-hit');
-            setTimeout(() => document.getElementById('m-sprite').classList.remove('monster-hit'), 400);
+            setTimeout(() => document.getElementById('m-sprite').classList.remove('monster-hit'), 180);
             
             if(data.monsterDefeated) {
                 logMessage(`💰 +${data.goldReward}G, ✨ +${data.expReward} EXP`);
@@ -397,7 +397,7 @@ async function submitAttack() {
         } else {
             logMessage(`😭 오답! -15 HP (정답: ${data.correctAnswer})`);
             document.getElementById('monster-area').classList.add('screen-flash');
-            setTimeout(() => document.getElementById('monster-area').classList.remove('screen-flash'), 400);
+            setTimeout(() => document.getElementById('monster-area').classList.remove('screen-flash'), 200);
             if(data.monsterHp !== undefined) gameState.currentMonster.hp = data.monsterHp;
         }
         
