@@ -95,19 +95,14 @@ function candidateUserIds(rawSchool, nickname) {
 }
 
 async function findExistingPlayer(rawSchool, nickname, primaryUserId) {
-  const primarySnap = await db.ref(`players/${primaryUserId}`).get();
-  if (primarySnap.exists()) {
-    return { userId: primaryUserId, player: primarySnap.val() };
-  }
-
-  const ids = [primaryUserId, ...candidateUserIds(rawSchool, nickname)];
-  const seen = new Set();
+  const ids = [...new Set([primaryUserId, ...candidateUserIds(rawSchool, nickname)].filter(Boolean))];
   let best = null;
-  for (const id of ids) {
-    if (!id || seen.has(id)) continue;
-    seen.add(id);
-    if (id === primaryUserId) continue;
-    const snap = await db.ref(`players/${id}`).get();
+
+  const snapshots = await Promise.all(
+    ids.map(async (id) => ({ id, snap: await db.ref(`players/${id}`).get() }))
+  );
+
+  for (const { id, snap } of snapshots) {
     if (snap.exists()) {
       const player = snap.val();
       if (!best || (player?.lv || 0) > (best.player?.lv || 0)) {
