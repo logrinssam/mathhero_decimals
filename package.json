@@ -10,12 +10,9 @@
     "find-suspicious": "node scripts/find-suspicious.mjs",
     "count-schools": "node scripts/count-schools.mjs",
     "reset-password": "node scripts/reset-password.mjs",
-    "restore-level": "node scripts/restore-level.mjs",
     "export-players": "npx firebase-tools database:get /players --project division-of-fractions --output scripts/players-export.json",
     "deploy:functions": "firebase deploy --only functions",
-    "deploy:rules": "firebase deploy --only database",
-    "add-authorized-domain": "node scripts/add-authorized-domain.mjs",
-    "deploy:backend": "firebase deploy --only database,functions"
+    "deploy:rules": "firebase deploy --only database"
   },
   "devDependencies": {
     "firebase-admin": "^13.0.0",

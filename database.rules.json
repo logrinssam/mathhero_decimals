@@ -1,10 +1,5 @@
 {
   "rules": {
-    "cachedLeaderboard": {
-      ".read": true,
-      ".write": false
-    },
-
     "leaderboard": {
       ".read": "query.limitToLast <= 1500",
       ".indexOn": ["lv", "todayAns"],
