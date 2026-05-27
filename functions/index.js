@@ -480,16 +480,8 @@ function activeProblemRef(userId) {
 }
 
 function pickMonsterForLevel(lv) {
-  const safeLv = Math.max(1, Math.floor(Number(lv) || 1));
-  const available = MONSTER_DATA.filter((m) => safeLv >= m.reqLv);
-  if (!available.length) return MONSTER_DATA[0];
-  return available[Math.floor(Math.random() * available.length)];
-}
-
-function defaultMonsterForLevel(lv) {
-  const picked = pickMonsterForLevel(lv);
-  const maxHp = 36 + lv * 18 + Math.floor(lv * lv * 0.012);
-  return { name: picked.name, hp: maxHp, maxHp };
+  const available = MONSTER_DATA.filter((m) => lv >= m.reqLv);
+  return available[Math.floor(Math.random() * available.length)] || MONSTER_DATA[0];
 }
 
 function makeProblemForLevel(lv) {
@@ -575,14 +567,15 @@ exports.getProblem = functions
     let monster;
     if (existing && existing.monsterHp > 0) {
       monster = {
-        name:  existing.monsterName || pickMonsterForLevel(lv).name,
+        name:  existing.monsterName,
         hp:    existing.monsterHp,
-        maxHp: existing.monsterMaxHp || defaultMonsterForLevel(lv).maxHp,
+        maxHp: existing.monsterMaxHp,
       };
     } else {
-      monster = defaultMonsterForLevel(lv);
+      const picked = pickMonsterForLevel(lv);
+      const maxHp  = 36 + lv * 18 + Math.floor(lv * lv * 0.012);
+      monster      = { name: picked.name, hp: maxHp, maxHp };
     }
-    if (!monster?.name) monster = defaultMonsterForLevel(lv);
 
     const problem = makeProblemForLevel(lv);
     await problemRef.set({
