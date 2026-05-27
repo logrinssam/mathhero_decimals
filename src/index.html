@@ -149,7 +149,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
-import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
+import { initializeAppCheck, ReCaptchaV3Provider, getToken } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDUADGY2c1Y7BFQQVImgHqX92xjNbdGLXk",
@@ -162,20 +162,50 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 
-// ✅ App Check: 매크로 프로그램 원천 차단 (웹사이트 외 호출 불가)
+// App Check: 공식 사이트 외 스크립트/매크로의 Functions 직접 호출 차단
 initializeAppCheck(app, {
     provider: new ReCaptchaV3Provider('6LdrTessAAAAAAhYC8DcVeCAb7AwF2Os5PvP9qb6'),
     isTokenAutoRefreshEnabled: true
 });
 
+let appCheckReady = null;
+function ensureAppCheck(forceRefresh = false) {
+    if (forceRefresh) appCheckReady = null;
+    if (!appCheckReady) {
+        appCheckReady = getToken(app, forceRefresh).catch((e) => {
+            appCheckReady = null;
+            throw e;
+        });
+    }
+    return appCheckReady;
+}
+
+function isAppCheckError(e) {
+    const code = String(e?.code || "");
+    const msg = String(e?.message || "");
+    return code === "functions/unauthenticated"
+        || /unauthenticated|app.?check|appcheck|recaptcha/i.test(msg);
+}
+
+function alertAppCheckHelp() {
+    alert(
+        "🔒 보안 확인에 실패했습니다.\n\n"
+        + "• Ctrl+F5 로 새로고침\n"
+        + "• mathhero-decimals.로그인교실.com 주소로 접속\n"
+        + "• 시크릿/다른 브라우저에서 한 번 시도\n\n"
+        + "잠시 후에도 같으면 선생님께 알려 주세요."
+    );
+}
+
 const db         = getDatabase(app);
 const functions  = getFunctions(app, "asia-northeast3");
 
-const loginPlayerFn  = httpsCallable(functions, "loginPlayer");
-const savePlayerFn   = httpsCallable(functions, "savePlayer");
-const getProblemFn   = httpsCallable(functions, "getProblem");
-const submitAnswerFn = httpsCallable(functions, "submitAnswer");
-const buyItemFn      = httpsCallable(functions, "buyItem");
+const loginPlayerFn    = httpsCallable(functions, "loginPlayer");
+const savePlayerFn     = httpsCallable(functions, "savePlayer");
+const getProblemFn     = httpsCallable(functions, "getProblem");
+const submitAnswerFn   = httpsCallable(functions, "submitAnswer");
+const buyItemFn        = httpsCallable(functions, "buyItem");
+const getLeaderboardFn = httpsCallable(functions, "getLeaderboard");
 
 // ✅ XSS 방어 - HTML escape 함수
 function escapeHtml(str) {
@@ -264,6 +294,7 @@ window.processLogin = async function() {
     else if(!school.endsWith("초등학교")) school += "초등학교";
     
     try {
+        await ensureAppCheck();
         const result = await loginPlayerFn({ school, nickname: nick, password: pw });
         gameState.player = result.data.player;
         gameState.loginPassword = pw;
@@ -289,6 +320,7 @@ window.processLogin = async function() {
         await generateProblem();  // ✅ 서버에서 첫 문제 받아오기
     } catch(e) {
         console.error(e);
+        if (isAppCheckError(e)) return alertAppCheckHelp();
         alert(e.message || "연결 실패! 인터넷 환경을 확인하세요.");
     }
 };
@@ -297,6 +329,7 @@ window.toggleSecret = async function() {
     if(!gameState.isLoggedIn) return;
     gameState.player.isSecret = document.getElementById('secret-toggle').checked;
     try {
+        await ensureAppCheck();
         const result = await savePlayerFn({ 
             player: gameState.player, 
             password: gameState.loginPassword 
@@ -317,6 +350,7 @@ function logMessage(msg) {
 async function generateProblem() {
     if(!gameState.isLoggedIn) return;
     try {
+        await ensureAppCheck();
         const result = await getProblemFn({
             school: gameState.player.school,
             nickname: gameState.player.nickname,
@@ -370,6 +404,7 @@ async function submitAttack() {
     document.getElementById('attack-btn').disabled = true;
     
     try {
+        await ensureAppCheck();
         const result = await submitAnswerFn({
             school: gameState.player.school,
             nickname: gameState.player.nickname,
@@ -407,7 +442,9 @@ async function submitAttack() {
     } catch(e) {
         console.error(e);
         const msg = e.message || "";
-        if(e.code === 'functions/resource-exhausted' || msg.includes("너무 빠릅니다")) {
+        if (isAppCheckError(e)) {
+            alertAppCheckHelp();
+        } else if(e.code === 'functions/resource-exhausted' || msg.includes("너무 빠릅니다")) {
             logMessage(msg || "잠깐만 천천히 눌러 주세요.");
             updateUI();
         } else if(e.code === 'functions/not-found' && msg.includes("문제")) {
@@ -460,6 +497,7 @@ function renderShop() {
 window.buyItem = async function(itemName) {
     if(!gameState.isLoggedIn) return;
     try {
+        await ensureAppCheck();
         const result = await buyItemFn({
             school: gameState.player.school,
             nickname: gameState.player.nickname,
@@ -474,6 +512,7 @@ window.buyItem = async function(itemName) {
         alert(`✨ ${itemName} 장착 완료!`);
     } catch(e) {
         console.error(e);
+        if (isAppCheckError(e)) return alertAppCheckHelp();
         const msg = e.message || "구매 실패";
         if(e.code === 'functions/failed-precondition') {
             alert("⚠️ " + msg);
@@ -518,8 +557,15 @@ window.switchRankTab = async function(tabName) {
     targetEl.innerHTML = "<p>로딩 중...</p>";
 
     try {
-        const snap = await get(ref(db, 'cachedLeaderboard'));
-        const cached = snap.val();
+        let cached = null;
+        try {
+            const lb = await getLeaderboardFn();
+            cached = lb.data;
+        } catch (fnErr) {
+            console.warn("getLeaderboard:", fnErr);
+            const snap = await get(ref(db, 'cachedLeaderboard'));
+            cached = snap.val();
+        }
         if (!cached) {
             targetEl.innerHTML = "<p style='text-align:center;'>랭킹 집계 중입니다. 잠시 후 다시 확인해 주세요.</p>";
             return;

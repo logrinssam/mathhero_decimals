@@ -9,6 +9,7 @@ admin.initializeApp({
 
 const db = admin.database();
 const REGION = "asia-northeast3";
+const CALLABLE_OPTS = { maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true };
 const MAX_LV = 2000;
 const BANNED_NICK_RE = /운영자|관리자|관리자환영|운영자환영|^gm$|^admin$|치트|hack/i;
 
@@ -496,7 +497,7 @@ function makeProblemForLevel(lv) {
 
 exports.loginPlayer = functions
   .region(REGION)
-  .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
+  .runWith(CALLABLE_OPTS)
   .https.onCall(async (data) => {
     const rawSchool = data?.school;
     const school    = normalizeSchool(rawSchool);
@@ -528,7 +529,7 @@ exports.loginPlayer = functions
 
 exports.savePlayer = functions
   .region(REGION)
-  .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
+  .runWith(CALLABLE_OPTS)
   .https.onCall(async (data) => {
     const rawPlayer = data?.player;
     if (!rawPlayer || typeof rawPlayer !== "object") fail("저장할 데이터가 없습니다.");
@@ -555,7 +556,7 @@ exports.savePlayer = functions
 
 exports.getProblem = functions
   .region(REGION)
-  .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
+  .runWith(CALLABLE_OPTS)
   .https.onCall(async (data) => {
     const { userId, player } = await resolvePlayerSession(data);
     await saveTrustedPlayer(userId, player);
@@ -590,8 +591,8 @@ exports.getProblem = functions
 
 exports.submitAnswer = functions
   .region(REGION)
-  .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
-  .https.onCall(async (data, context) => {                    // ✅ context 추가
+  .runWith(CALLABLE_OPTS)
+  .https.onCall(async (data, context) => {
     const { userId, player } = await resolvePlayerSession(data);
 
     const rawAnswer = String(data?.answer ?? "").trim();
@@ -709,9 +710,26 @@ exports.scheduledLeaderboard = functions
     await buildAndSaveLeaderboard();
   });
 
+exports.getLeaderboard = functions
+  .region(REGION)
+  .runWith({ maxInstances: 5, timeoutSeconds: 10 })
+  .https.onCall(async () => {
+    const snap = await db.ref("cachedLeaderboard").get();
+    const cached = snap.val();
+    if (!cached) {
+      return { personal: [], daily: [], school: [], updatedAt: 0 };
+    }
+    return {
+      personal: cached.personal || [],
+      daily: cached.daily || [],
+      school: cached.school || [],
+      updatedAt: cached.updatedAt || 0,
+    };
+  });
+
 exports.buyItem = functions
   .region(REGION)
-  .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
+  .runWith(CALLABLE_OPTS)
   .https.onCall(async (data) => {
     const { userId, player } = await resolvePlayerSession(data);
     const itemName = cleanName(data?.itemName, 40);
