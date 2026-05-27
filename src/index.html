@@ -177,6 +177,13 @@ const getProblemFn   = httpsCallable(functions, "getProblem");
 const submitAnswerFn = httpsCallable(functions, "submitAnswer");
 const buyItemFn      = httpsCallable(functions, "buyItem");
 
+function isAppCheckError(e) {
+    const code = String(e?.code || "");
+    const msg = String(e?.message || "");
+    return code === "functions/unauthenticated"
+        || /unauthenticated|app.?check/i.test(msg);
+}
+
 // ✅ XSS 방어 - HTML escape 함수
 function escapeHtml(str) {
     if (str == null) return '';
@@ -286,10 +293,19 @@ window.processLogin = async function() {
         document.getElementById('secret-toggle').checked = gameState.player.isSecret;
         
         updateUI();
-        await generateProblem();  // ✅ 서버에서 첫 문제 받아오기
+        await generateProblem();
     } catch(e) {
         console.error(e);
-        alert(e.message || "연결 실패! 인터넷 환경을 확인하세요.");
+        if (isAppCheckError(e)) {
+            alert("보안 확인에 실패했습니다.\nCtrl+F5 로 새로고침 후 다시 시도해 주세요.");
+            return;
+        }
+        const msg = String(e?.message || "");
+        if (/reading 'name'|문제 데이터/i.test(msg)) {
+            alert("문제를 불러오지 못했습니다. Ctrl+F5 후 다시 로그인해 주세요.");
+            return;
+        }
+        alert(msg || "연결 실패! 인터넷 환경을 확인하세요.");
     }
 };
 
@@ -323,15 +339,17 @@ async function generateProblem() {
             password: gameState.loginPassword
         });
         const data = result.data;
+        if (!data?.question) throw new Error("문제 데이터 없음");
         gameState.currentProblem = { q: data.question, start: Date.now() };
-        
-        // 몬스터 정보 동기화
-        const m = monsterData.find(x => x.name === data.monster.name);
+
+        const mon = data.monster || {};
+        const monsterName = mon.name || monsterData[0]?.name || "소수점 슬라임";
+        const m = monsterData.find((x) => x.name === monsterName) || monsterData[0];
         gameState.currentMonster = {
-            name: data.monster.name,
-            sprite: m ? m.sprite : '👾',
-            hp: data.monster.hp,
-            maxHp: data.monster.maxHp
+            name: monsterName,
+            sprite: m?.sprite || "👾",
+            hp: Number(mon.hp) > 0 ? Number(mon.hp) : 100,
+            maxHp: Number(mon.maxHp) > 0 ? Number(mon.maxHp) : 100,
         };
         
         document.getElementById('p-text').innerText = data.question;
