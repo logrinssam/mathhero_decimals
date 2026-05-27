@@ -18,12 +18,18 @@ const ALLOWED_BONUS_TIME = new Set([5, 7, 9, 12, 16, 22]);
 const ALLOWED_EXP_BONUS = new Set([0, 50, 100, 200]);
 
 function getToday() {
-  // Cloud Functions는 UTC 기준 → KST(UTC+9) 변환하여 한국 자정에 리셋
-  const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
-  const year  = d.getUTCFullYear();
-  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const day   = String(d.getUTCDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  // KST 기준 — 정답왕·오늘 정답은 매일 오전 8시에 초기화 (8시 전은 전날 집계)
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  let year = kst.getUTCFullYear();
+  let month = kst.getUTCMonth();
+  let day = kst.getUTCDate();
+  if (kst.getUTCHours() < 8) {
+    const prev = new Date(Date.UTC(year, month, day) - 86400000);
+    year = prev.getUTCFullYear();
+    month = prev.getUTCMonth();
+    day = prev.getUTCDate();
+  }
+  return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
 function fail(message, code = "invalid-argument") {

@@ -12,11 +12,17 @@ const DATABASE_URL =
 const DAILY_LIMIT = 2000;
 
 function getToday() {
-  const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
-  const year = d.getUTCFullYear();
-  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(d.getUTCDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  let year = kst.getUTCFullYear();
+  let month = kst.getUTCMonth();
+  let day = kst.getUTCDate();
+  if (kst.getUTCHours() < 8) {
+    const prev = new Date(Date.UTC(year, month, day) - 86400000);
+    year = prev.getUTCFullYear();
+    month = prev.getUTCMonth();
+    day = prev.getUTCDate();
+  }
+  return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
 const keyPath = [

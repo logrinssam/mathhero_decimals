@@ -131,6 +131,7 @@
                 <button class="tab-btn" id="tab-school" onclick="switchRankTab('school')">🏫 학교 연합</button>
             </div>
             <div id="rank-list"></div>
+            <p id="daily-rank-reset-note" class="hidden" style="text-align:center; color:#888; font-size:0.95em; margin:0 0 12px;">⏰ 오전 8시에 초기화됩니다</p>
             <div id="daily-rank-list" class="hidden"></div>
             <div id="school-rank-list" class="hidden"></div>
             <button class="action-btn btn-nav" style="background:#78909c;" onclick="showScreen('battle')">🔙 돌아가기</button>
@@ -196,11 +197,17 @@ function escapeHtml(str) {
 }
 
 function getToday() {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    let year = kst.getUTCFullYear();
+    let month = kst.getUTCMonth();
+    let day = kst.getUTCDate();
+    if (kst.getUTCHours() < 8) {
+        const prev = new Date(Date.UTC(year, month, day) - 86400000);
+        year = prev.getUTCFullYear();
+        month = prev.getUTCMonth();
+        day = prev.getUTCDate();
+    }
+    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
 // 상점 아이템 - 디스플레이용 (실제 구매 검증은 서버)
@@ -524,6 +531,7 @@ window.switchRankTab = async function(tabName) {
     document.getElementById('tab-school').classList.toggle('active', tabName === 'school');
 
     document.getElementById('rank-list').classList.toggle('hidden', tabName !== 'personal');
+    document.getElementById('daily-rank-reset-note').classList.toggle('hidden', tabName !== 'daily');
     document.getElementById('daily-rank-list').classList.toggle('hidden', tabName !== 'daily');
     document.getElementById('school-rank-list').classList.toggle('hidden', tabName !== 'school');
 
