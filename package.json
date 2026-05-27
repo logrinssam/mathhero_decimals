@@ -12,7 +12,8 @@
     "reset-password": "node scripts/reset-password.mjs",
     "export-players": "npx firebase-tools database:get /players --project division-of-fractions --output scripts/players-export.json",
     "deploy:functions": "firebase deploy --only functions",
-    "deploy:rules": "firebase deploy --only database"
+    "deploy:rules": "firebase deploy --only database",
+    "rebuild-leaderboard": "node scripts/rebuild-cached-leaderboard.mjs"
   },
   "devDependencies": {
     "firebase-admin": "^13.0.0",

@@ -251,12 +251,14 @@ function sanitizePlayer(input, existing, school, nickname) {
 }
 
 function rankDataFor(p) {
+  const today = getToday();
+  const lastDate = p.lastDate || today;
   return {
     lv: p.lv || 1,
-    todayAns: p.todayAns || 0,
+    todayAns: lastDate === today ? cappedTodayAns(p) : 0,
     school: p.school || "",
     nickname: p.isSecret === false ? p.nickname || "" : maskNicknamePlain(p.nickname || ""),
-    lastDate: p.lastDate || getToday(),
+    lastDate: today,
     isSecret: p.isSecret !== false,
   };
 }
@@ -319,16 +321,25 @@ const BLOCK_DURATIONS = [
 const BLOCK_LABELS = ["1시간", "6시간", "24시간", "영구"];
 // ===== 상수 끝 =====
 
+function assertNotMaintenanceHours() {
+  const koreaHour = new Date(Date.now() + 9 * 60 * 60 * 1000).getUTCHours();
+  if (koreaHour >= 0 && koreaHour < 6) {
+    fail("서비스 점검 시간입니다. (밤 12시~새벽 6시)", "resource-exhausted");
+  }
+}
+
+function cappedTodayAns(p) {
+  const today = getToday();
+  if ((p.lastDate || "") !== today) return 0;
+  return Math.min(Math.max(0, Math.floor(p.todayAns || 0)), DAILY_LIMIT);
+}
+
 // ===== 매크로 차단: Rate Limit (DB 저장 방식 → 서버 재시작해도 유지) =====
 async function checkRateLimit(userId) {
   const now   = Date.now();
   const today = getToday();
 
-  // 새벽 1~6시 차단 (한국시간 UTC+9 기준)
-  const koreaHour = new Date(now + 9 * 60 * 60 * 1000).getUTCHours();
-  if (koreaHour >= 1 && koreaHour < 6) {
-    fail("서비스 점검 시간입니다. (새벽 1시~6시)", "resource-exhausted");
-  }
+  assertNotMaintenanceHours();
 
   const ref  = db.ref(`rateLimit/${userId}`);
   const snap = await ref.get();
@@ -507,6 +518,7 @@ exports.loginPlayer = functions
   .region(REGION)
   .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
   .https.onCall(async (data) => {
+    assertNotMaintenanceHours();
     const rawSchool = data?.school;
     const school    = normalizeSchool(rawSchool);
     const nickname  = cleanName(data?.nickname, 40);
@@ -566,6 +578,7 @@ exports.getProblem = functions
   .region(REGION)
   .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
   .https.onCall(async (data) => {
+    assertNotMaintenanceHours();
     const { userId, player } = await resolvePlayerSession(data);
     await saveTrustedPlayer(userId, player);
 
@@ -625,7 +638,8 @@ exports.submitAnswer = functions
 
     if (isCorrect) {
       player.curCombo  = (player.curCombo || 0) + 1;
-      player.todayAns  = Math.min((player.todayAns || 0) + 1, 100000);
+      player.todayAns  = Math.min((player.todayAns || 0) + 1, DAILY_LIMIT);
+      player.lastDate  = getToday();
 
       const killedCount     = (player.collection && player.collection[problem.monsterName]) || 0;
       const collectionBonus = killedCount >= 50 ? 1.2 : killedCount >= 25 ? 1.1 : 1;
@@ -692,7 +706,12 @@ async function buildAndSaveLeaderboard() {
   const personal = [...all].sort((a, b) => b.lv - a.lv).slice(0, 50);
 
   const daily = [...all]
-    .filter((p) => p.lastDate === today && p.todayAns > 0)
+    .map((p) => ({
+      ...p,
+      todayAns: p.lastDate === today ? Math.min(p.todayAns || 0, DAILY_LIMIT) : 0,
+      lastDate: p.lastDate === today ? today : p.lastDate,
+    }))
+    .filter((p) => p.lastDate === today && p.todayAns > 0 && p.todayAns <= DAILY_LIMIT)
     .sort((a, b) => b.todayAns - a.todayAns)
     .slice(0, 10);
 
@@ -722,6 +741,7 @@ exports.buyItem = functions
   .region(REGION)
   .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
   .https.onCall(async (data) => {
+    assertNotMaintenanceHours();
     const { userId, player } = await resolvePlayerSession(data);
     const itemName = cleanName(data?.itemName, 40);
     const item     = SHOP_ITEMS.find((i) => i.name === itemName);
