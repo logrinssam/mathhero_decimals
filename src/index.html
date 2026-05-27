@@ -296,7 +296,11 @@ window.processLogin = async function() {
     try {
         await ensureAppCheck();
         const result = await loginPlayerFn({ school, nickname: nick, password: pw });
-        gameState.player = result.data.player;
+        const loginData = result?.data;
+        gameState.player = loginData?.player || loginData;
+        if (!gameState.player || !gameState.player.nickname) {
+            throw new Error("로그인 응답이 올바르지 않습니다. 새로고침 후 다시 시도해 주세요.");
+        }
         gameState.loginPassword = pw;
         if(!gameState.player.collection) gameState.player.collection = {};
 
@@ -317,11 +321,19 @@ window.processLogin = async function() {
         document.getElementById('secret-toggle').checked = gameState.player.isSecret;
         
         updateUI();
-        await generateProblem();  // ✅ 서버에서 첫 문제 받아오기
+        const problemOk = await generateProblem();
+        if (!problemOk) {
+            alert("로그인은 되었지만 첫 문제를 불러오지 못했습니다.\n공격! 버튼을 누르거나 Ctrl+F5 후 다시 시도해 주세요.");
+        }
     } catch(e) {
         console.error(e);
         if (isAppCheckError(e)) return alertAppCheckHelp();
-        alert(e.message || "연결 실패! 인터넷 환경을 확인하세요.");
+        const msg = String(e?.message || "");
+        if (/reading 'name'|reading 'monster'|INVALID_PROBLEM/i.test(msg)) {
+            alert("문제 데이터를 불러오지 못했습니다.\nCtrl+F5 로 새로고침 후 다시 로그인해 주세요.");
+            return;
+        }
+        alert(msg || "연결 실패! 인터넷 환경을 확인하세요.");
     }
 };
 
@@ -347,8 +359,20 @@ function logMessage(msg) {
 }
 
 // ✅ 핵심: 서버에서 문제 받아오기 (정답은 서버 메모리에만 존재)
+function applyMonsterFromServer(mon) {
+    const fallback = monsterData[0] || { name: "소수점 슬라임", sprite: "💧" };
+    const monsterName = (mon && mon.name) ? mon.name : fallback.name;
+    const m = monsterData.find((x) => x.name === monsterName) || fallback;
+    gameState.currentMonster = {
+        name: monsterName,
+        sprite: m.sprite || "👾",
+        hp: Number(mon?.hp) > 0 ? Number(mon.hp) : 100,
+        maxHp: Number(mon?.maxHp) > 0 ? Number(mon.maxHp) : 100,
+    };
+}
+
 async function generateProblem() {
-    if(!gameState.isLoggedIn) return;
+    if(!gameState.isLoggedIn) return false;
     try {
         await ensureAppCheck();
         const result = await getProblemFn({
@@ -356,31 +380,27 @@ async function generateProblem() {
             nickname: gameState.player.nickname,
             password: gameState.loginPassword
         });
-        const data = result.data;
+        const data = result?.data;
+        if (!data || !data.question) throw new Error("INVALID_PROBLEM");
+
         gameState.currentProblem = { q: data.question, start: Date.now() };
-        
-        // 몬스터 정보 동기화
-        const m = monsterData.find(x => x.name === data.monster.name);
-        gameState.currentMonster = {
-            name: data.monster.name,
-            sprite: m ? m.sprite : '👾',
-            hp: data.monster.hp,
-            maxHp: data.monster.maxHp
-        };
-        
+        applyMonsterFromServer(data.monster);
+
         document.getElementById('p-text').innerText = data.question;
         document.getElementById('m-name').innerText = gameState.currentMonster.name;
         document.getElementById('m-sprite').innerText = gameState.currentMonster.sprite;
-        
+
         if(data.player) {
             gameState.player = { ...gameState.player, ...data.player };
         }
-        
+
         document.getElementById('answer-input').focus();
         updateUI();
+        return true;
     } catch(e) {
         console.error(e);
         document.getElementById('p-text').innerText = "⚠️ 연결 오류! 새로고침 해주세요.";
+        return false;
     }
 }
 
