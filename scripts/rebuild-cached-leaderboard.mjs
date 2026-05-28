@@ -46,22 +46,33 @@ initializeApp({
 const db = getDatabase();
 const today = getToday();
 
-const snap = await db.ref("leaderboard").orderByChild("lv").limitToLast(1500).get();
+const [lbSnap, rlSnap] = await Promise.all([
+  db.ref("leaderboard").orderByChild("lv").limitToLast(1500).get(),
+  db.ref("rateLimit").get(),
+]);
+const rateMap = rlSnap.val() || {};
 const all = [];
-snap.forEach((c) => {
-  if (c.val()?.lv) all.push(c.val());
+lbSnap.forEach((c) => {
+  if (c.val()?.lv) all.push({ ...c.val(), uid: c.key });
 });
 
-const personal = [...all].sort((a, b) => b.lv - a.lv).slice(0, 50);
+const personal = [...all]
+  .map(({ uid, ...p }) => p)
+  .sort((a, b) => b.lv - a.lv)
+  .slice(0, 50);
 
 const daily = [...all]
-  .map((p) => ({
-    ...p,
-    todayAns:
-      p.lastDate === today
-        ? Math.min(Math.max(0, p.todayAns || 0), DAILY_LIMIT)
-        : 0,
-  }))
+  .map((p) => {
+    const rl = rateMap[p.uid];
+    const maxOk =
+      rl && rl.dailyDate === today
+        ? Math.min(Math.max(0, Math.floor(rl.dailyCount || 0)), DAILY_LIMIT)
+        : 0;
+    const todayAns =
+      p.lastDate === today ? Math.min(p.todayAns || 0, maxOk, DAILY_LIMIT) : 0;
+    const { uid, ...rest } = p;
+    return { ...rest, todayAns };
+  })
   .filter(
     (p) => p.lastDate === today && p.todayAns > 0 && p.todayAns <= DAILY_LIMIT
   )

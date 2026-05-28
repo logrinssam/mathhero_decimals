@@ -334,10 +334,32 @@ function assertNotMaintenanceHours() {
   }
 }
 
-function cappedTodayAns(p) {
+function cappedTodayAns(p, maxFromRateLimit) {
   const today = getToday();
   if ((p.lastDate || "") !== today) return 0;
-  return Math.min(Math.max(0, Math.floor(p.todayAns || 0)), DAILY_LIMIT);
+  let n = Math.min(Math.max(0, Math.floor(p.todayAns || 0)), DAILY_LIMIT);
+  if (maxFromRateLimit != null) {
+    n = Math.min(n, Math.max(0, Math.floor(maxFromRateLimit)));
+  }
+  return n;
+}
+
+async function syncTodayAnsWithRateLimit(userId, player) {
+  const today = getToday();
+  if ((player.lastDate || "") !== today) {
+    player.todayAns = 0;
+    player.lastDate = today;
+    return player;
+  }
+  const rl = (await db.ref(`rateLimit/${userId}`).get()).val();
+  const maxOk =
+    rl && rl.dailyDate === today
+      ? Math.min(Math.max(0, Math.floor(rl.dailyCount || 0)), DAILY_LIMIT)
+      : 0;
+  if ((player.todayAns || 0) > maxOk) {
+    player.todayAns = maxOk;
+  }
+  return player;
 }
 
 // ===== 매크로 차단: Rate Limit (DB 저장 방식 → 서버 재시작해도 유지) =====
@@ -406,6 +428,7 @@ async function checkRateLimit(userId) {
   }
 
   await ref.update(data);
+  return data.dailyCount;
 }
 
 // ===== 이상 행동 탐지 (의심 계정 자동 기록) =====
@@ -485,9 +508,10 @@ async function resolvePlayerSession(data) {
 }
 
 async function saveTrustedPlayer(userId, player) {
+  const synced = await syncTodayAnsWithRateLimit(userId, player);
   const updates = {};
-  updates[`players/${userId}`]     = player;
-  updates[`leaderboard/${userId}`] = rankDataFor(player);
+  updates[`players/${userId}`]     = synced;
+  updates[`leaderboard/${userId}`] = rankDataFor(synced);
   await db.ref().update(updates);
 }
 
@@ -543,12 +567,10 @@ exports.loginPlayer = functions
       isNew  = true;
     }
 
-    const updates = {};
     if (checkedPw) player.pwHash = passwordHash(userId, checkedPw);
     if (existing?.pw) player.pw  = null;
-    updates[`players/${userId}`]     = player;
-    updates[`leaderboard/${userId}`] = rankDataFor(player);
-    await db.ref().update(updates);
+    await saveTrustedPlayer(userId, player);
+    player = (await db.ref(`players/${userId}`).get()).val();
 
     return { player: publicPlayer(player), isNew, locked: Boolean(player.pwHash) };
   });
@@ -633,7 +655,7 @@ exports.submitAnswer = functions
 
     const problemRef = activeProblemRef(userId);
     const problemSnapPromise = problemRef.get();
-    await checkRateLimit(userId);                              // ✅ Rate Limit 체크
+    const dailyCount = await checkRateLimit(userId);
     const problem = (await problemSnapPromise).val();
     if (!problem) fail("문제를 먼저 받아 주세요.", "not-found");
 
@@ -644,7 +666,7 @@ exports.submitAnswer = functions
 
     if (isCorrect) {
       player.curCombo  = (player.curCombo || 0) + 1;
-      player.todayAns  = Math.min((player.todayAns || 0) + 1, DAILY_LIMIT);
+      player.todayAns  = Math.min((player.todayAns || 0) + 1, dailyCount, DAILY_LIMIT);
       player.lastDate  = getToday();
 
       const killedCount     = (player.collection && player.collection[problem.monsterName]) || 0;
@@ -705,18 +727,33 @@ const LEADERBOARD_TTL_MS = 30 * 60 * 1000;
 
 async function buildAndSaveLeaderboard() {
   const today = getToday();
-  const snap  = await db.ref("leaderboard").orderByChild("lv").limitToLast(1500).get();
-  const all   = [];
-  snap.forEach((c) => { if (c.val()?.lv) all.push(c.val()); });
+  const [lbSnap, rlSnap] = await Promise.all([
+    db.ref("leaderboard").orderByChild("lv").limitToLast(1500).get(),
+    db.ref("rateLimit").get(),
+  ]);
+  const rateMap = rlSnap.val() || {};
+  const all = [];
+  lbSnap.forEach((c) => {
+    if (c.val()?.lv) all.push({ ...c.val(), uid: c.key });
+  });
 
-  const personal = [...all].sort((a, b) => b.lv - a.lv).slice(0, 50);
+  const personal = [...all]
+    .map(({ uid, ...p }) => p)
+    .sort((a, b) => b.lv - a.lv)
+    .slice(0, 50);
 
   const daily = [...all]
-    .map((p) => ({
-      ...p,
-      todayAns: p.lastDate === today ? Math.min(p.todayAns || 0, DAILY_LIMIT) : 0,
-      lastDate: p.lastDate === today ? today : p.lastDate,
-    }))
+    .map((p) => {
+      const rl = rateMap[p.uid];
+      const maxOk =
+        rl && rl.dailyDate === today
+          ? Math.min(Math.max(0, Math.floor(rl.dailyCount || 0)), DAILY_LIMIT)
+          : 0;
+      const todayAns =
+        p.lastDate === today ? Math.min(p.todayAns || 0, maxOk, DAILY_LIMIT) : 0;
+      const { uid, ...rest } = p;
+      return { ...rest, todayAns, lastDate: p.lastDate === today ? today : p.lastDate };
+    })
     .filter((p) => p.lastDate === today && p.todayAns > 0 && p.todayAns <= DAILY_LIMIT)
     .sort((a, b) => b.todayAns - a.todayAns)
     .slice(0, 10);
