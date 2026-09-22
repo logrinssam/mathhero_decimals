@@ -1,5 +1,29 @@
 {
   "rules": {
+    "s2": {
+      ".read": false,
+      ".write": false,
+      "cachedLeaderboard": {
+        ".read": true,
+        ".write": false
+      },
+      "leaderboard": {
+        ".read": false,
+        ".write": false,
+        ".indexOn": ["lv"]
+      },
+      "players":        { ".read": false, ".write": false },
+      "activeProblems": { ".read": false, ".write": false },
+      "rateLimit":      { ".read": false, ".write": false },
+      "anomaly":        { ".read": false, ".write": false },
+      "suspiciousUsers":{ ".read": false, ".write": false }
+    },
+
+    "config": {
+      ".read": false,
+      ".write": false
+    },
+
     "cachedLeaderboard": {
       ".read": true,
       ".write": false
