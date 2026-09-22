@@ -1,6 +1,7 @@
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
+const { findBannedWord } = require("./badwords");
 
 admin.initializeApp({
   databaseURL:
@@ -317,7 +318,15 @@ const MONSTER_DATA = [
 // ===== 매크로 차단 상수 =====
 const MINUTE_LIMIT    = 90;                          // 1분 최대 90회
 const DAILY_LIMIT     = 2000;                        // 하루 최대 2000회
-const MIN_INTERVAL_MS = 200;                         // 호출 최소 간격 0.2초 (연타만 거부)
+const MIN_INTERVAL_MS = 400;                         // 호출 최소 간격 0.4초 (연타만 거부)
+
+// 풀이 시간 하한(초). 서버가 문제를 낸 시각부터 답이 도착한 시각까지 (네트워크 왕복 포함).
+//  HARD: 사람이 물리적으로 불가능 → 답을 받지 않고 다시 풀게 함 (벌점 없음, 10분 안에 25회면 차단)
+//  SOFT: 아주 빠른 학생도 드물게만 넘는 선 → 의심 점수 계산에만 사용 (몫이 두 자리 소수인 21레벨부터만)
+const HARD_FLOOR_SEC = 0.8;
+const SOFT_FLOOR_SEC = 2.0;
+const FAST_REJECT_BLOCK = 25;
+const FAST_REJECT_WINDOW_MS = 10 * 60 * 1000;
 const BLOCK_DURATIONS = [
   60  * 60 * 1000,                                   // 1차 위반: 1시간
   6   * 60 * 60 * 1000,                              // 2차 위반: 6시간
@@ -432,29 +441,77 @@ async function checkRateLimit(userId) {
 }
 
 // ===== 이상 행동 탐지 (의심 계정 자동 기록) =====
-async function detectAnomalies(userId, isCorrect, elapsed) {
+// 자동 차단: rateLimit의 위반 횟수를 올리고 차단 시간을 건다 (1시간 → 6시간 → 24시간 → 영구)
+async function applyAutoBlock(userId, reason) {
+  const rlRef = db.ref(`rateLimit/${userId}`);
+  const rl    = (await rlRef.get()).val() || {};
+  if (rl.blockedUntil && Date.now() < rl.blockedUntil) return;
+  rl.violationCount  = (rl.violationCount || 0) + 1;
+  const idx          = Math.min(rl.violationCount - 1, BLOCK_DURATIONS.length - 1);
+  rl.blockedUntil    = Date.now() + BLOCK_DURATIONS[idx];
+  rl.lastBlockReason = reason;
+  await rlRef.update(rl);
+  await db.ref(`suspiciousUsers/${userId}`).update({
+    autoBlockedAt: new Date().toISOString(), reason, violationCount: rl.violationCount,
+  });
+}
+
+// 시간 하한(HARD_FLOOR) 위반 기록. 10분 안에 반복되면 차단.
+async function recordFastReject(userId, elapsed) {
+  try {
+    const ref  = db.ref(`anomaly/${userId}`);
+    const data = (await ref.get()).val() || {};
+    const now  = Date.now();
+    const recentRejects = [...(data.fastRejectTimes || []), now].filter((t) => now - t < FAST_REJECT_WINDOW_MS).slice(-FAST_REJECT_BLOCK);
+    await ref.update({
+      fastRejects: (data.fastRejects || 0) + 1,
+      fastRejectTimes: recentRejects,
+      lastFastReject: { at: now, elapsed },
+    });
+    if (recentRejects.length >= FAST_REJECT_BLOCK) {
+      await applyAutoBlock(userId, `10분 안에 시간 하한 위반 ${recentRejects.length}회`);
+      await ref.update({ fastRejectTimes: [] });
+    }
+  } catch (e) {
+    console.error("recordFastReject error:", e);
+  }
+}
+
+async function detectAnomalies(userId, isCorrect, elapsed, lv) {
   try {
     const ref  = db.ref(`anomaly/${userId}`);
     const snap = await ref.get();
-    const data = snap.val() || { recentTimes: [], correctStreak: 0, suspicionScore: 0 };
+    const data = snap.val() || { recentTimes: [], recent: [], correctStreak: 0, suspicionScore: 0 };
 
-    // 최근 10개 응답시간 기록
-    data.recentTimes    = [...(data.recentTimes || []).slice(-9), elapsed];
-    data.correctStreak  = isCorrect ? (data.correctStreak || 0) + 1 : 0;
+    // 최근 10개 응답시간 + 최근 20개 (시간, 정답) 기록
+    data.recentTimes   = [...(data.recentTimes || []).slice(-9), elapsed];
+    data.recent        = [...(data.recent || []).slice(-19), { t: Math.round(elapsed * 100) / 100, c: isCorrect ? 1 : 0, lv }];
+    data.correctStreak = isCorrect ? (data.correctStreak || 0) + 1 : 0;
 
     let score = data.suspicionScore || 0;
+    let fired = false;                               // 이번 답에서 신호가 하나라도 걸렸는지
 
-    // 신호 1: 응답시간 분산 작음 (자동화 패턴)
-    if (data.recentTimes.length >= 5) {
-      const avg      = data.recentTimes.reduce((a, b) => a + b, 0) / data.recentTimes.length;
-      const variance = data.recentTimes.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / data.recentTimes.length;
-      if (variance < 0.3 && avg < 3.3) score += 2;
+    // 신호 1: 응답시간이 기계처럼 일정함 — 사람은 빨라도 문제마다 들쭉날쭉하다 (편차/평균 < 10%)
+    if (data.recentTimes.length >= 10) {
+      const avg = data.recentTimes.reduce((a, b) => a + b, 0) / data.recentTimes.length;
+      const std = Math.sqrt(data.recentTimes.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / data.recentTimes.length);
+      if (avg < 6 && std / avg < 0.10) { score += 2; fired = true; }
     }
 
-    // 신호 2: 500연속 정답 + 빠른 속도
-    if (data.correctStreak > 500 && elapsed < 5.0) score += 5;
+    // 신호 2: (21레벨부터, 몫이 두 자리 소수) 최근 20문제 중 80% 이상이 SOFT 하한보다 빠르고 전부 정답
+    //   → 23.45 ÷ 5 = 4.69 같은 문제를 2초 안에 20개 연속 다 맞히는 학생은 없다 (21레벨 이후 답만 센다)
+    const hardOnes = data.recent.filter((r) => (r.lv || 0) > 20);
+    if (hardOnes.length >= 20) {
+      const fast = hardOnes.filter((r) => r.t < SOFT_FLOOR_SEC).length;
+      const allCorrect = hardOnes.every((r) => r.c === 1);
+      if (fast >= 16 && allCorrect) { score += 3; fired = true; }
+    }
 
-    // 오답 발생 시 점수 감쇠 (정상 학생 보호)
+    // 신호 3: 1000문제 연속 정답 — 1000개 연속으로 틀리지 않는 학생은 없다
+    if (data.correctStreak > 1000) { score += 1; fired = true; }
+
+    // 감쇠: 신호가 없으면 1점, 오답이면 2점 더 깎는다 (정상 학생은 점수가 쌓이지 않는다)
+    if (!fired) score = Math.max(0, score - 1);
     if (!isCorrect) score = Math.max(0, score - 2);
 
     data.suspicionScore = Math.min(score, 20);
@@ -469,20 +526,11 @@ async function detectAnomalies(userId, isCorrect, elapsed) {
       });
     }
 
-    // 자동 차단: 세 조건이 동시에 충족될 때만 (사람이 걸릴 수 없는 조건)
-    // ① 의심점수 15점 이상 (여러 신호가 반복 누적)
-    // ② 500연속 정답 유지 중
-    // → 이 둘이 동시에 성립하는 실제 학생은 없음
-    if (data.suspicionScore >= 15 && data.correctStreak > 500) {
-      const rlRef  = db.ref(`rateLimit/${userId}`);
-      const rlSnap = await rlRef.get();
-      const rl     = rlSnap.val() || {};
-      if (!rl.blockedUntil || Date.now() >= rl.blockedUntil) {
-        rl.violationCount = (rl.violationCount || 0) + 1;
-        const idx         = Math.min(rl.violationCount - 1, BLOCK_DURATIONS.length - 1);
-        rl.blockedUntil   = Date.now() + BLOCK_DURATIONS[idx];
-        await rlRef.update(rl);
-      }
+    // 자동 차단: 의심점수 15점 이상 + 150연속 정답 유지 중일 때만
+    // → 오답이 한 번이라도 나오면 연속정답이 풀리고 점수도 깎이므로 실제 학생은 걸리지 않는다
+    if (data.suspicionScore >= 15 && data.correctStreak > 150) {
+      await applyAutoBlock(userId, `의심점수 ${data.suspicionScore}, 연속정답 ${data.correctStreak}`);
+      await ref.update({ suspicionScore: 0 });
     }
   } catch (e) {
     // 이상 탐지 실패해도 게임 진행에 영향 없도록 조용히 처리
@@ -563,6 +611,9 @@ exports.loginPlayer = functions
     if (existing) {
       player = sanitizePlayer(existing, existing, school, nickname);
     } else {
+      if (findBannedWord(nickname) || findBannedWord(school)) {
+        fail("😥 욕설이나 나쁜 말이 들어간 닉네임은 쓸 수 없어요. 다른 닉네임으로 정해 주세요.");
+      }
       player = defaultPlayer(school, nickname);
       isNew  = true;
     }
@@ -659,8 +710,14 @@ exports.submitAnswer = functions
     const problem = (await problemSnapPromise).val();
     if (!problem) fail("문제를 먼저 받아 주세요.", "not-found");
 
-    const isCorrect = Math.abs(userAnswer - problem.answer) < 0.001;
     const elapsed   = (now - problem.createdAt) / 1000;
+    if (elapsed < HARD_FLOOR_SEC) {
+      // 사람이 읽고 입력할 수 없는 시간 → 답을 받지 않는다 (벌점 없음). 같은 문제를 다시 풀면 된다.
+      await recordFastReject(userId, elapsed);
+      fail("⚡ 너무 빨라요! 문제를 잘 읽고 다시 풀어 보세요.", "resource-exhausted");
+    }
+
+    const isCorrect = Math.abs(userAnswer - problem.answer) < 0.001;
     const result    = { correct: isCorrect, correctAnswer: problem.answer };
     let problemWritePromise;
 
@@ -715,7 +772,7 @@ exports.submitAnswer = functions
 
     await Promise.all([
       problemWritePromise,
-      detectAnomalies(userId, isCorrect, elapsed),             // ✅ 이상 탐지
+      detectAnomalies(userId, isCorrect, elapsed, player.lv || 1), // ✅ 이상 탐지
       saveTrustedPlayer(userId, player),
     ]);
     result.player = publicPlayer(player);

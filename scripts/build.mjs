@@ -27,7 +27,13 @@ if (!match) {
   process.exit(1);
 }
 
-const sourceCode = match[1].trim();
+// import 줄은 최상위에 남기고, 나머지 본문은 즉시실행함수 (() => { })() 로 감싼다.
+// → 최상위 const/let/function 이 지역 선언이 되어 난독화 도구가 이름을 모두 바꾼다 (window.xxx = 는 그대로 동작).
+const rawSource = match[1].trim();
+const isImport = (l) => /^\s*import\s/.test(l);
+const importLines = rawSource.split(/\r?\n/).filter(isImport);
+const bodyLines = rawSource.split(/\r?\n/).filter((l) => !isImport(l));
+const sourceCode = importLines.join("\n") + "\n(() => {\n" + bodyLines.join("\n") + "\n})();";
 
 const obfuscatorOptions = light
   ? {
@@ -44,23 +50,32 @@ const obfuscatorOptions = light
       target: "browser",
     }
   : {
+      // 강한 난독화: 제어 흐름 평탄화 + 죽은 코드 삽입 + 문자열 암호화 + 자기 방어 + 디버거 방해 + 콘솔 무력화
       compact: true,
-      controlFlowFlattening: false,
-      deadCodeInjection: false,
-      debugProtection: false,
-      disableConsoleOutput: false,
+      controlFlowFlattening: true,
+      controlFlowFlatteningThreshold: 0.6,
+      deadCodeInjection: true,
+      deadCodeInjectionThreshold: 0.25,
+      debugProtection: true,
+      debugProtectionInterval: 2000,
+      disableConsoleOutput: true,
       identifierNamesGenerator: "hexadecimal",
-      numbersToExpressions: false,
+      numbersToExpressions: true,
       renameGlobals: false,
-      selfDefending: false,
+      selfDefending: true,
       simplify: true,
       splitStrings: true,
-      splitStringsChunkLength: 8,
+      splitStringsChunkLength: 6,
       stringArray: true,
-      stringArrayCallsTransform: false,
-      stringArrayEncoding: ["base64"],
-      stringArrayThreshold: 0.55,
-      transformObjectKeys: false,
+      stringArrayCallsTransform: true,
+      stringArrayEncoding: ["rc4"],
+      stringArrayIndexShift: true,
+      stringArrayRotate: true,
+      stringArrayShuffle: true,
+      stringArrayWrappersCount: 3,
+      stringArrayWrappersType: "function",
+      stringArrayThreshold: 0.9,
+      transformObjectKeys: true,
       unicodeEscapeSequence: false,
       target: "browser",
     };
@@ -73,7 +88,7 @@ const obfuscated = JavaScriptObfuscator.obfuscate(
 const banner =
   "<!-- 배포용 자동 생성 (npm run build). 수정은 src/index.html -->";
 const scriptBlock = `<script type="module">\n${obfuscated}\n</script>`;
-let outHtml = html.replace(match[0], scriptBlock);
+let outHtml = html.replace(match[0], () => scriptBlock);   // 함수 치환: 코드 안의 $ 가 특수 패턴으로 해석되지 않게
 
 if (/<!DOCTYPE\s+html/i.test(outHtml)) {
   outHtml = outHtml.replace(/<!DOCTYPE\s+html[^>]*>/i, (d) => `${d}\n${banner}`);
