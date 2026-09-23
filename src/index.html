@@ -13,6 +13,8 @@
         #top-bar { background: #ffffff; padding: 10px 15px; border-bottom: 5px solid var(--p); display: flex; justify-content: center; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         #top-bar input { font-family: 'Jua'; padding: 8px; border: 3px solid var(--p); border-radius: 12px; text-align: center; width: 140px; font-size: 1rem; }
         .btn-start { background: var(--a); border: none; border-radius: 12px; color: white; padding: 8px 25px; cursor: pointer; font-family: 'Jua'; font-size: 1.1em; box-shadow: 0 4px 0 #d32f2f; }
+        #s2-banner { display: block; background: linear-gradient(90deg, #7e57c2, #5e35b1); color: #fff; text-align: center; padding: 11px 15px; font-size: 1em; text-decoration: none; border-bottom: 3px solid #4527a0; position: relative; z-index: 999; }
+        #s2-banner:hover { background: linear-gradient(90deg, #8e6bd0, #6b45c2); }
         #notice-banner { background-color: #fff3e0; color: #e65100; text-align: center; padding: 10px; font-size: 0.9em; font-weight: bold; border-bottom: 2px solid #ffcc80; position: relative; z-index: 999; }
         .close-notice { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; background: rgba(0,0,0,0.1); width: 22px; height: 22px; line-height: 20px; border-radius: 50%; font-size: 14px; }
         
@@ -68,6 +70,7 @@
     <input type="password" id="user-pw" placeholder="비번(선택)" maxlength="12" style="font-family: 'Jua'; padding: 8px; border: 3px solid var(--p); border-radius: 12px; text-align: center; width: 110px; font-size: 1rem;">
     <button class="btn-start" id="start-button" onclick="processLogin()">모험 시작!</button>
 </div>
+<a id="s2-banner" href="https://mathhero-decimals2.web.app" target="_blank" rel="noopener">⚔️ <b>2학기 편 「소수의 나눗셈 용사 Ⅱ」가 열렸어요!</b> 1학기 계정 그대로 로그인 → <u>지금 가기</u> →</a>
 <div id="notice-banner">
     📢 <b>[내 캐릭터 지키기]</b> 다른 사람이 내 아이디로 들어오는 걸 막으려면 🔒<b>비밀번호(영문/숫자 4~12자)</b>를 적고 시작해요!<br>
     <span style="font-size: 0.85em; font-weight: normal; color: #d84315;">(비밀번호는 선택사항입니다. 잃어버리면 안 되니 기억하기 쉬운 글자와 숫자로 정하세요!)</span>
