@@ -492,18 +492,6 @@ document.addEventListener('keydown', (e) => {
     }
 }, true);
 document.addEventListener('contextmenu', (e) => e.preventDefault());
-// 개발자 도구가 열려 있으면(창 크기 차이로 감지) 게임을 잠근다
-(function watchDevtools() {
-    let shown = false;
-    setInterval(() => {
-        const open = (window.outerWidth - window.innerWidth > 200) || (window.outerHeight - window.innerHeight > 200);
-        if (open && !shown) {
-            shown = true;
-            document.getElementById('game-container').classList.add('is-locked');
-            alert("🔒 개발자 도구를 닫고 새로고침해 주세요.");
-        }
-    }, 1500);
-})();
 
 // 콘솔에서 handleAttack()을 직접 호출하는 경우는 차단한다.
 window.handleAttack = async function(e) {
