@@ -864,3 +864,68 @@ exports.buyItem = functions
     await saveTrustedPlayer(userId, player);
     return { player: publicPlayer(player) };
   });
+
+// ===== 히든 보상 코드 (2학기 「소수의 나눗셈 용사 Ⅱ」에서 쓰는 코드 발급) =====
+// 조건: 1학기 LV 10 이상. 학생 한 명에 코드 하나 (다시 눌러도 같은 코드).
+// 저장: rewardCodes/<1학기 userId> = { code, tier, lv, issuedAt, claimedAt? }, rewardCodeIndex/<code> = userId
+// 등급은 아직 2학기에서 쓰지 않았다면 다시 눌렀을 때 현재 레벨로 올라갈 수 있다.
+const REWARD_TIERS = [
+  { tier: 4, minLv: 200, label: "🏆 전설 등급" },
+  { tier: 3, minLv: 100, label: "🥇 금 등급" },
+  { tier: 2, minLv: 30,  label: "🥈 은 등급" },
+  { tier: 1, minLv: 10,  label: "🥉 동 등급" },
+];
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";   // 헷갈리는 I, O, 0, 1 제외
+
+function rewardTierForLevel(lv) {
+  return REWARD_TIERS.find((t) => lv >= t.minLv) || null;
+}
+
+function makeRewardCode() {
+  const bytes = crypto.randomBytes(6);
+  let s = "";
+  for (let i = 0; i < 6; i++) s += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
+  return `HERO-${s.slice(0, 4)}-${s.slice(4)}`;
+}
+
+exports.getHiddenReward = functions
+  .region(REGION)
+  .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
+  .https.onCall(async (data) => {
+    assertNotMaintenanceHours();
+    const { userId, player } = await resolvePlayerSession(data);
+    const lv   = player.lv || 1;
+    const tier = rewardTierForLevel(lv);
+    if (!tier) {
+      fail(`히든 보상은 LV 10부터 열려요! (지금 LV ${lv}) 조금만 더 힘내요 💪`, "failed-precondition");
+    }
+
+    const ref = db.ref(`rewardCodes/${userId}`);
+    const existing = (await ref.get()).val();
+
+    if (existing && existing.code) {
+      // 이미 발급됨: 아직 안 썼고 등급이 올라갔으면 등급만 갱신
+      if (!existing.claimedAt && tier.tier > (existing.tier || 0)) {
+        await ref.update({ tier: tier.tier, lv, upgradedAt: Date.now() });
+        return { code: existing.code, tier: tier.tier, label: tier.label, lv, upgraded: true, claimed: false };
+      }
+      const t = REWARD_TIERS.find((x) => x.tier === existing.tier) || tier;
+      return { code: existing.code, tier: t.tier, label: t.label, lv: existing.lv, claimed: Boolean(existing.claimedAt) };
+    }
+
+    // 새 코드 발급 (중복이면 다시 뽑는다)
+    let code;
+    for (let i = 0; i < 10; i++) {
+      code = makeRewardCode();
+      if (!(await db.ref(`rewardCodeIndex/${code}`).get()).exists()) break;
+      code = null;
+    }
+    if (!code) fail("코드를 만들지 못했어요. 잠시 후 다시 시도해 주세요.", "internal");
+
+    const record = { code, tier: tier.tier, lv, issuedAt: Date.now(), school: player.school, nickname: player.nickname };
+    await db.ref().update({
+      [`rewardCodes/${userId}`]: record,
+      [`rewardCodeIndex/${code}`]: userId,
+    });
+    return { code, tier: tier.tier, label: tier.label, lv, claimed: false, isNew: true };
+  });

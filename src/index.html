@@ -57,6 +57,9 @@
         .tag-w { background: #ffebee; color: #d32f2f; } .tag-a { background: #f3e5f5; color: #7e57c2; } .tag-x { background: #e8f5e9; color: #2e7d32; } .tag-e { background: #fff9c4; color: #f57f17; }
         
         #combo-badge { position: absolute; top: -10px; right: -10px; background: #ff9800; color: white; padding: 6px 15px; border-radius: 20px; font-size: 1.2em; box-shadow: 0 4px 0 #e65100; transform: rotate(12deg); display: none; z-index: 50; }
+        #reward-box { margin-top: 12px; background: #f3e5f5; border: 3px dashed #ab47bc; border-radius: 15px; padding: 12px; text-align: center; font-size: 0.95em; color: #4a148c; }
+        #reward-box .reward-code { font-size: 1.7em; letter-spacing: 2px; color: #6a1b9a; margin: 6px 0; user-select: all; }
+        #reward-box a { color: #6a1b9a; font-weight: bold; }
         .secret-toggle-label { margin-top: 10px; font-size: 1em; color: #555; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; background: #f5f5f5; padding: 5px 15px; border-radius: 15px; border: 2px solid #ddd; transition: 0.2s; }
         
         @media screen and (max-width: 768px) { #top-bar { flex-wrap: wrap; } #game-container { flex-direction: column; } #collection-grid { grid-template-columns: 1fr; } }
@@ -101,6 +104,8 @@
         <button class="action-btn btn-nav" style="background:#ffa726;" onclick="showScreen('shop')">🏪 만물상점</button>
         <button class="action-btn btn-nav" style="background:#66bb6a;" onclick="showScreen('rank')">🏆 전국 용사 순위</button>
         <button class="action-btn btn-nav" style="background:#42a5f5;" onclick="showScreen('collection')">👾 몬스터 도감</button>
+        <button class="action-btn btn-nav" style="background:#ab47bc;" onclick="getHiddenReward()">🎁 히든 보상 (2학기 코드)</button>
+        <div id="reward-box" class="hidden"></div>
     </div>
 
     <div id="main-panel" class="panel" style="flex: 2.2;">
@@ -180,6 +185,7 @@ const savePlayerFn   = httpsCallable(functions, "savePlayer");
 const getProblemFn   = httpsCallable(functions, "getProblem");
 const submitAnswerFn = httpsCallable(functions, "submitAnswer");
 const buyItemFn      = httpsCallable(functions, "buyItem");
+const getHiddenRewardFn = httpsCallable(functions, "getHiddenReward");
 
 function isAppCheckError(e) {
     const code = String(e?.code || "");
@@ -316,6 +322,33 @@ window.processLogin = async function() {
             return;
         }
         alert(msg || "연결 실패! 인터넷 환경을 확인하세요.");
+    }
+};
+
+// 🎁 히든 보상: 2학기 「소수의 나눗셈 용사 Ⅱ」에서 쓰는 코드 발급 (LV 10부터)
+window.getHiddenReward = async function() {
+    if(!gameState.isLoggedIn) return alert("먼저 모험을 시작해 주세요!");
+    const box = document.getElementById('reward-box');
+    box.classList.remove('hidden');
+    box.innerHTML = "코드를 만드는 중...";
+    try {
+        const result = await getHiddenRewardFn({
+            school: gameState.player.school,
+            nickname: gameState.player.nickname,
+            password: gameState.loginPassword
+        });
+        const d = result.data;
+        const status = d.claimed
+            ? "<div style='color:#c62828;'>✅ 이미 2학기에서 사용한 코드예요.</div>"
+            : (d.upgraded ? "<div style='color:#2e7d32;'>⬆️ 레벨이 올라서 등급이 올라갔어요!</div>" : "");
+        box.innerHTML = `<div><b>${escapeHtml(d.label)}</b> (1학기 LV.${d.lv})</div>`
+            + `<div class="reward-code">${escapeHtml(d.code)}</div>`
+            + status
+            + `<div style="font-size:0.9em; margin-top:6px;">이 코드를 <a href="https://mathhero-decimals2.web.app" target="_blank" rel="noopener">2학기 사이트</a>의 🎟️ <b>1학기 보상 코드</b>에 넣으면 보상을 받아요!<br>`
+            + `<span style="color:#888;">(내 계정으로만 쓸 수 있어요. 친구 코드는 안 돼요!)</span></div>`;
+    } catch(e) {
+        console.error(e);
+        box.innerHTML = `<div style="color:#c62828;">${escapeHtml(e.message || "코드를 받지 못했어요. 다시 시도해 주세요.")}</div>`;
     }
 };
 

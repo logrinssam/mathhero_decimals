@@ -24,6 +24,9 @@
       ".write": false
     },
 
+    "rewardCodes":     { ".read": false, ".write": false },
+    "rewardCodeIndex": { ".read": false, ".write": false },
+
     "cachedLeaderboard": {
       ".read": true,
       ".write": false
