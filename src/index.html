@@ -119,7 +119,7 @@
             </div>
             <div id="problem-banner"><span id="p-text">로그인 해주세요!</span></div>
             <div style="display:flex; justify-content:center; align-items:center;">
-                <input type="text" id="answer-input" placeholder="정답" autocomplete="off" maxlength="10">
+                <input type="text" id="answer-input" placeholder="정답" autocomplete="off" maxlength="10" inputmode="decimal">
                 <button type="button" class="action-btn btn-attack" id="attack-btn">공격!</button>
             </div>
             <div id="battle-log" style="margin-top:20px; height:80px; overflow-y:auto; border-top:2px solid #eee; padding-top:10px; font-size:0.95em; color:#888;"></div>
@@ -345,7 +345,14 @@ window.getHiddenReward = async function() {
             + `<div class="reward-code">${escapeHtml(d.code)}</div>`
             + status
             + `<div style="font-size:0.9em; margin-top:6px;">이 코드를 <a href="https://mathhero-decimals2.web.app" target="_blank" rel="noopener">2학기 사이트</a>의 🎟️ <b>1학기 보상 코드</b>에 넣으면 보상을 받아요!<br>`
-            + `<span style="color:#888;">(내 계정으로만 쓸 수 있어요. 친구 코드는 안 돼요!)</span></div>`;
+            + `<span style="color:#888;">(내 계정으로만 쓸 수 있어요. 친구 코드는 안 돼요!)</span></div>`
+            + (d.claimed ? "" : `<div style="font-size:0.85em; margin-top:6px; color:#6a1b9a;">💡 2학기에서 쓰기 전까지는 1학기 레벨이 오르면 등급도 올라가요. 쓰고 나면 등급이 고정돼요!</div>`)
+            + `<button type="button" class="action-btn" id="reward-copy" style="background:#7e57c2; margin-top:8px; font-size:0.95em;">📋 코드 복사</button>`;
+        const copyBtn = document.getElementById('reward-copy');
+        copyBtn.addEventListener('click', async () => {
+            try { await navigator.clipboard.writeText(d.code); copyBtn.innerText = "✅ 복사했어요!"; }
+            catch(err) { copyBtn.innerText = "코드를 손으로 적어 주세요"; }
+        });
     } catch(e) {
         console.error(e);
         box.innerHTML = `<div style="color:#c62828;">${escapeHtml(e.message || "코드를 받지 못했어요. 다시 시도해 주세요.")}</div>`;
@@ -417,13 +424,17 @@ async function submitAttack() {
     if(gameState.isAttacking) return;
 
     const input = document.getElementById('answer-input');
-    const rawValue = input.value.trim();
-    
-    if(rawValue.length === 0 || rawValue.length > 10) { input.value = ""; return; }
-    if(!/^-?\d*\.?\d+$/.test(rawValue)) { input.value = ""; return; }
+    // 아이들이 흔히 치는 모양을 정리한다: 전각 숫자(５), 쉼표(5,3), 띄어쓰기, 끝에 붙은 점(5.)
+    const rawValue = input.value
+        .replace(/[０-９．，]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+        .replace(/,/g, ".")
+        .replace(/\s+/g, "")
+        .replace(/\.$/, "");
     const userAnswer = parseFloat(rawValue);
-    if(isNaN(userAnswer) || !isFinite(userAnswer) || Math.abs(userAnswer) > 10000) {
-        input.value = "";
+    if(rawValue.length === 0 || rawValue.length > 10 || !/^-?\d*\.?\d+$/.test(rawValue)
+        || isNaN(userAnswer) || !isFinite(userAnswer) || Math.abs(userAnswer) > 10000) {
+        logMessage("✏️ 숫자와 소수점(.)만 써 주세요!");
+        input.focus();
         return;
     }
     
@@ -471,6 +482,7 @@ async function submitAttack() {
         if(e.code === 'functions/resource-exhausted' || msg.includes("너무 빠릅니다")) {
             logMessage(msg || "잠깐만 천천히 눌러 주세요.");
             updateUI();
+            return;                        // 쓴 답은 그대로 두고, 잠시 뒤 다시 누르면 된다
         } else if(e.code === 'functions/not-found' && msg.includes("문제")) {
             await generateProblem();
         } else {
@@ -491,7 +503,7 @@ document.addEventListener('keydown', (e) => {
         logMessage("🔒 용사님, 그건 안 돼요!");
     }
 }, true);
-document.addEventListener('contextmenu', (e) => e.preventDefault());
+document.addEventListener('contextmenu', (e) => { if (e.target.closest && e.target.closest('input, #reward-box')) return; e.preventDefault(); });
 
 // 콘솔에서 handleAttack()을 직접 호출하는 경우는 차단한다.
 window.handleAttack = async function(e) {

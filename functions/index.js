@@ -154,6 +154,35 @@ function assertPassword(existing, userId, password) {
   return pw;
 }
 
+// ===== 비밀번호 대입 방지 =====
+// 계정별로 10분 안에 8번 틀리면 15분 잠금. 경로 authLock/<userId> 는 1·2학기가 같이 쓴다
+// (2학기 첫 로그인은 1학기 비밀번호로 확인하므로, 어느 쪽에서 대입해도 같은 잠금에 걸린다).
+const AUTH_FAIL_LIMIT     = 8;
+const AUTH_FAIL_WINDOW_MS = 10 * 60 * 1000;
+const AUTH_LOCK_MS        = 15 * 60 * 1000;
+
+async function checkPasswordGuarded(existing, userId, password) {
+  if (!existing || !(existing.pwHash || existing.pw)) return assertPassword(existing, userId, password);
+  const ref  = db.ref(`authLock/${userId}`);
+  const lock = (await ref.get()).val() || {};
+  const now  = Date.now();
+  if (lock.lockedUntil && now < lock.lockedUntil) {
+    const min = Math.ceil((lock.lockedUntil - now) / 60000);
+    fail(`비밀번호를 여러 번 틀려서 잠시 잠겼어요. ${min}분 뒤에 다시 해 보세요. (내 계정이 맞다면 선생님께 말해 주세요)`, "resource-exhausted");
+  }
+  try {
+    const pw = assertPassword(existing, userId, password);
+    if (lock.fails || lock.lockedUntil) await ref.remove();
+    return pw;
+  } catch (e) {
+    if (e.code === "permission-denied") {
+      const fails = [...(lock.fails || []), now].filter((t) => now - t < AUTH_FAIL_WINDOW_MS);
+      await ref.set(fails.length >= AUTH_FAIL_LIMIT ? { fails: [], lockedUntil: now + AUTH_LOCK_MS } : { fails });
+    }
+    throw e;
+  }
+}
+
 function clampInt(value, min, max, fallback) {
   const n = Math.floor(Number(value));
   if (!Number.isFinite(n)) return fallback;
@@ -547,7 +576,7 @@ async function resolvePlayerSession(data) {
   const found     = await findExistingPlayer(rawSchool || school, nickname, userId);
   const existing  = found.player;
   if (!existing) fail("플레이어를 찾을 수 없습니다.", "not-found");
-  const checkedPw = assertPassword(existing, found.userId, data?.password);
+  const checkedPw = await checkPasswordGuarded(existing, found.userId, data?.password);
   const player    = sanitizePlayer(existing, existing, school, nickname);
   if (existing.pwHash || existing.pw || checkedPw) {
     player.pwHash = passwordHash(userId, checkedPw);
@@ -604,7 +633,7 @@ exports.loginPlayer = functions
     const pw        = normalizePassword(data?.password);
     const found     = await findExistingPlayer(rawSchool, nickname, userId);
     const existing  = found.player;
-    const checkedPw = assertPassword(existing, found.userId, pw);
+    const checkedPw = await checkPasswordGuarded(existing, found.userId, pw);
 
     let player;
     let isNew = false;
@@ -639,7 +668,7 @@ exports.savePlayer = functions
     const userId    = userIdFor(school, nickname);
     const found     = await findExistingPlayer(rawSchool, nickname, userId);
     const existing  = found.player;
-    const checkedPw = assertPassword(existing, found.userId, data?.password);
+    const checkedPw = await checkPasswordGuarded(existing, found.userId, data?.password);
     if (!existing) fail("플레이어를 찾을 수 없습니다.", "not-found");
 
     const player     = sanitizePlayer(existing, existing, school, nickname);
@@ -708,7 +737,8 @@ exports.submitAnswer = functions
     const problemSnapPromise = problemRef.get();
     const dailyCount = await checkRateLimit(userId);
     const problem = (await problemSnapPromise).val();
-    if (!problem) fail("문제를 먼저 받아 주세요.", "not-found");
+    // 한 문제에는 한 번만 답할 수 있다 (오답에서 받은 정답을 같은 문제에 다시 내는 것 방지)
+    if (!problem || problem.answered) fail("문제를 먼저 받아 주세요.", "not-found");
 
     const elapsed   = (now - problem.createdAt) / 1000;
     if (elapsed < HARD_FLOOR_SEC) {
@@ -719,6 +749,7 @@ exports.submitAnswer = functions
 
     const isCorrect = Math.abs(userAnswer - problem.answer) < 0.001;
     const result    = { correct: isCorrect, correctAnswer: problem.answer };
+    problem.answered = true;           // 몬스터 체력은 남기고 문제만 닫는다 → 다음 getProblem 이 새 문제를 낸다
     let problemWritePromise;
 
     if (isCorrect) {
@@ -910,7 +941,8 @@ exports.getHiddenReward = functions
         return { code: existing.code, tier: tier.tier, label: tier.label, lv, upgraded: true, claimed: false };
       }
       const t = REWARD_TIERS.find((x) => x.tier === existing.tier) || tier;
-      return { code: existing.code, tier: t.tier, label: t.label, lv: existing.lv, claimed: Boolean(existing.claimedAt) };
+      // 이미 쓴 코드면 발급 당시 레벨, 아직 안 썼으면 지금 레벨을 보여 준다
+      return { code: existing.code, tier: t.tier, label: t.label, lv: existing.claimedAt ? existing.lv : lv, claimed: Boolean(existing.claimedAt) };
     }
 
     // 새 코드 발급 (중복이면 다시 뽑는다)
@@ -922,10 +954,14 @@ exports.getHiddenReward = functions
     }
     if (!code) fail("코드를 만들지 못했어요. 잠시 후 다시 시도해 주세요.", "internal");
 
+    // 버튼을 두 번 빨리 눌러도 코드가 하나만 생기도록 트랜잭션으로 "처음 쓴 쪽"만 남긴다
     const record = { code, tier: tier.tier, lv, issuedAt: Date.now(), school: player.school, nickname: player.nickname };
-    await db.ref().update({
-      [`rewardCodes/${userId}`]: record,
-      [`rewardCodeIndex/${code}`]: userId,
-    });
+    const tx = await ref.transaction((cur) => (cur && cur.code ? undefined : record));
+    if (!tx.committed) {
+      const won = tx.snapshot.val();
+      const t = REWARD_TIERS.find((x) => x.tier === won.tier) || tier;
+      return { code: won.code, tier: t.tier, label: t.label, lv, claimed: Boolean(won.claimedAt) };
+    }
+    await db.ref(`rewardCodeIndex/${code}`).set(userId);
     return { code, tier: tier.tier, label: tier.label, lv, claimed: false, isNew: true };
   });

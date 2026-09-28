@@ -16,29 +16,12 @@
     }
   ],
   "hosting": {
-    "public": ".",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**",
-      "src/**",
-      "scripts/**",
-      ".github/**",
-      "database.rules.json",
-      "package.json",
-      "package-lock.json",
-      "Code.gs",
-      "README.md"
-    ],
-    "headers": [
+    "public": "hosting-redirect",
+    "redirects": [
       {
         "source": "**",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache"
-          }
-        ]
+        "destination": "https://logrinssam.github.io/mathhero_decimals/",
+        "type": 301
       }
     ]
   }
