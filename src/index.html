@@ -10,7 +10,11 @@
         * { box-sizing: border-box; }
         body { font-family: 'Jua', sans-serif; background: var(--bg); color: var(--t); margin: 0; padding: 0; overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh; }
         
-        #top-bar { background: #ffffff; padding: 10px 15px; border-bottom: 5px solid var(--p); display: flex; justify-content: center; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        #top-bar { background: #ffffff; padding: 10px 15px; border-bottom: 5px solid var(--p); display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 15px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        #site-title { flex-basis: 100%; text-align: center; color: #1565c0; font-size: 1.35em; line-height: 1.3; }
+        #site-title b { color: var(--a); }
+        #site-title .game-name { white-space: nowrap; }
+        #site-title small { display: block; font-size: 0.68em; color: #888; margin-top: 2px; }
         #top-bar input { font-family: 'Jua'; padding: 8px; border: 3px solid var(--p); border-radius: 12px; text-align: center; width: 140px; font-size: 1rem; }
         .btn-start { background: var(--a); border: none; border-radius: 12px; color: white; padding: 8px 25px; cursor: pointer; font-family: 'Jua'; font-size: 1.1em; box-shadow: 0 4px 0 #d32f2f; }
         #s2-banner { display: block; background: linear-gradient(90deg, #7e57c2, #5e35b1); color: #fff; text-align: center; padding: 11px 15px; font-size: 1em; text-decoration: none; border-bottom: 3px solid #4527a0; position: relative; z-index: 999; }
@@ -62,12 +66,13 @@
         #reward-box a { color: #6a1b9a; font-weight: bold; }
         .secret-toggle-label { margin-top: 10px; font-size: 1em; color: #555; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; background: #f5f5f5; padding: 5px 15px; border-radius: 15px; border: 2px solid #ddd; transition: 0.2s; }
         
-        @media screen and (max-width: 768px) { #top-bar { flex-wrap: wrap; } #game-container { flex-direction: column; } #collection-grid { grid-template-columns: 1fr; } }
+        @media screen and (max-width: 768px) { #top-bar { flex-wrap: wrap; } #site-title { font-size: 1.1em; } #site-title .game-name { display: block; font-size: 1.15em; } #site-title .sword-end { display: none; } #game-container { flex-direction: column; } #collection-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
 <div id="top-bar">
+    <div id="site-title">⚔️ 로그린쌤의 3단원 복습 놀이 <b class="game-name">「소수의 나눗셈 용사」</b><span class="sword-end"> ⚔️</span><small>학교와 닉네임을 쓰고 <b>모험 시작!</b>을 눌러요</small></div>
     <input type="text" id="school-name" placeholder="학교 (예: OO초)" maxlength="20">
     <input type="text" id="user-nick" placeholder="닉네임" maxlength="10">
     <input type="password" id="user-pw" placeholder="비번(선택)" maxlength="12" style="font-family: 'Jua'; padding: 8px; border: 3px solid var(--p); border-radius: 12px; text-align: center; width: 110px; font-size: 1rem;">
@@ -302,6 +307,7 @@ window.processLogin = async function() {
         gameState.isLoggedIn = true;
         document.getElementById('game-container').classList.remove('is-locked');
         document.getElementById('start-button').innerText = "접속 완료";
+        document.getElementById('site-title').classList.add('hidden');
         document.getElementById('start-button').disabled = true;
         document.getElementById('school-name').disabled = true;
         document.getElementById('user-nick').disabled = true;
