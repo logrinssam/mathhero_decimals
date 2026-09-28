@@ -10,7 +10,7 @@
         * { box-sizing: border-box; }
         body { font-family: 'Jua', sans-serif; background: var(--bg); color: var(--t); margin: 0; padding: 0; overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh; }
         
-        #top-bar { background: #ffffff; padding: 10px 15px; border-bottom: 5px solid var(--p); display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 15px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        #top-bar { background: #ffffff; padding: 10px 15px; border-bottom: 5px solid var(--p); display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 15px; position: relative; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         #site-title { flex-basis: 100%; text-align: center; color: #1565c0; font-size: 1.35em; line-height: 1.3; }
         #site-title b { color: var(--a); }
         #site-title .game-name { white-space: nowrap; }
@@ -66,7 +66,7 @@
         #reward-box a { color: #6a1b9a; font-weight: bold; }
         .secret-toggle-label { margin-top: 10px; font-size: 1em; color: #555; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; background: #f5f5f5; padding: 5px 15px; border-radius: 15px; border: 2px solid #ddd; transition: 0.2s; }
         
-        @media screen and (max-width: 768px) { #top-bar { flex-wrap: wrap; } #site-title { font-size: 1.1em; } #site-title .game-name { display: block; font-size: 1.15em; } #site-title .sword-end { display: none; } #game-container { flex-direction: column; } #collection-grid { grid-template-columns: 1fr; } }
+        @media screen and (max-width: 768px) { #top-bar { flex-wrap: wrap; } #site-title { font-size: 1.1em; } #site-title .game-name { display: block; font-size: 1.15em; } #site-title .sword-end { display: none; } #problem-banner { font-size: 2.3em; padding: 15px 8px; } #game-container { flex-direction: column; } #collection-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
