@@ -161,10 +161,11 @@ const AUTH_FAIL_LIMIT     = 8;
 const AUTH_FAIL_WINDOW_MS = 10 * 60 * 1000;
 const AUTH_LOCK_MS        = 15 * 60 * 1000;
 
-async function checkPasswordGuarded(existing, userId, password) {
+async function checkPasswordGuarded(existing, userId, password, prefetchedLock) {
   if (!existing || !(existing.pwHash || existing.pw)) return assertPassword(existing, userId, password);
   const ref  = db.ref(`authLock/${userId}`);
-  const lock = (await ref.get()).val() || {};
+  // 미리 같이 읽어 둔 잠금 기록이 있으면 그걸 쓴다 (요청마다 DB 왕복 1번 절약)
+  const lock = (prefetchedLock && prefetchedLock.userId === userId ? prefetchedLock.val : (await ref.get()).val()) || {};
   const now  = Date.now();
   if (lock.lockedUntil && now < lock.lockedUntil) {
     const min = Math.ceil((lock.lockedUntil - now) / 60000);
@@ -573,10 +574,14 @@ async function resolvePlayerSession(data) {
   const school    = normalizeSchool(rawSchool);
   const nickname  = cleanName(data?.nickname, 40);
   const userId    = userIdFor(school, nickname);
-  const found     = await findExistingPlayer(rawSchool || school, nickname, userId);
+  // 플레이어 찾기와 비밀번호 잠금 기록 읽기를 동시에
+  const [found, lockSnap] = await Promise.all([
+    findExistingPlayer(rawSchool || school, nickname, userId),
+    db.ref(`authLock/${userId}`).get(),
+  ]);
   const existing  = found.player;
   if (!existing) fail("플레이어를 찾을 수 없습니다.", "not-found");
-  const checkedPw = await checkPasswordGuarded(existing, found.userId, data?.password);
+  const checkedPw = await checkPasswordGuarded(existing, found.userId, data?.password, { userId, val: lockSnap.val() });
   const player    = sanitizePlayer(existing, existing, school, nickname);
   if (existing.pwHash || existing.pw || checkedPw) {
     player.pwHash = passwordHash(userId, checkedPw);
@@ -623,7 +628,7 @@ function makeProblemForLevel(lv) {
 
 exports.loginPlayer = functions
   .region(REGION)
-  .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
+  .runWith({ maxInstances: 1000, timeoutSeconds: 10, enforceAppCheck: true })
   .https.onCall(async (data) => {
     assertNotMaintenanceHours();
     const rawSchool = data?.school;
@@ -657,7 +662,7 @@ exports.loginPlayer = functions
 
 exports.savePlayer = functions
   .region(REGION)
-  .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
+  .runWith({ maxInstances: 1000, timeoutSeconds: 10, enforceAppCheck: true })
   .https.onCall(async (data) => {
     const rawPlayer = data?.player;
     if (!rawPlayer || typeof rawPlayer !== "object") fail("저장할 데이터가 없습니다.");
@@ -684,7 +689,7 @@ exports.savePlayer = functions
 
 exports.getProblem = functions
   .region(REGION)
-  .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
+  .runWith({ maxInstances: 1000, timeoutSeconds: 10, enforceAppCheck: true })
   .https.onCall(async (data) => {
     assertNotMaintenanceHours();
     const { userId, player } = await resolvePlayerSession(data);
@@ -720,7 +725,7 @@ exports.getProblem = functions
 
 exports.submitAnswer = functions
   .region(REGION)
-  .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
+  .runWith({ maxInstances: 1000, timeoutSeconds: 10, enforceAppCheck: true })
   .https.onCall(async (data, context) => {                    // ✅ context 추가
     const { userId, player } = await resolvePlayerSession(data);
 
@@ -870,7 +875,7 @@ exports.scheduledLeaderboard = functions
 
 exports.buyItem = functions
   .region(REGION)
-  .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
+  .runWith({ maxInstances: 1000, timeoutSeconds: 10, enforceAppCheck: true })
   .https.onCall(async (data) => {
     assertNotMaintenanceHours();
     const { userId, player } = await resolvePlayerSession(data);
@@ -921,7 +926,7 @@ function makeRewardCode() {
 
 exports.getHiddenReward = functions
   .region(REGION)
-  .runWith({ maxInstances: 5, timeoutSeconds: 10, enforceAppCheck: true })
+  .runWith({ maxInstances: 1000, timeoutSeconds: 10, enforceAppCheck: true })
   .https.onCall(async (data) => {
     assertNotMaintenanceHours();
     const { userId, player } = await resolvePlayerSession(data);
