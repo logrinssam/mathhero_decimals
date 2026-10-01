@@ -574,11 +574,15 @@ async function resolvePlayerSession(data) {
   const school    = normalizeSchool(rawSchool);
   const nickname  = cleanName(data?.nickname, 40);
   const userId    = userIdFor(school, nickname);
-  // 플레이어 찾기와 비밀번호 잠금 기록 읽기를 동시에
-  const [found, lockSnap] = await Promise.all([
-    findExistingPlayer(rawSchool || school, nickname, userId),
+  // 저장된 이름(userId)과 비밀번호 잠금 기록을 동시에 읽는다.
+  // 로그인 때 항상 userId 로 저장하므로 거의 여기서 끝나고, 없을 때만 옛 학교 표기 후보를 더 찾는다.
+  const [primarySnap, lockSnap] = await Promise.all([
+    db.ref(`players/${userId}`).get(),
     db.ref(`authLock/${userId}`).get(),
   ]);
+  const found = primarySnap.exists()
+    ? { userId, player: primarySnap.val() }
+    : await findExistingPlayer(rawSchool || school, nickname, userId);
   const existing  = found.player;
   if (!existing) fail("플레이어를 찾을 수 없습니다.", "not-found");
   const checkedPw = await checkPasswordGuarded(existing, found.userId, data?.password, { userId, val: lockSnap.val() });
@@ -586,11 +590,19 @@ async function resolvePlayerSession(data) {
   if (existing.pwHash || existing.pw || checkedPw) {
     player.pwHash = passwordHash(userId, checkedPw);
   }
-  return { school, nickname, userId, player };
+  // 저장된 값과 똑같으면 다시 저장할 필요가 없다 (문제 받기마다 쓰기를 줄인다)
+  const unchanged = found.userId === userId && stableJson(player) === stableJson(existing);
+  return { school, nickname, userId, player, unchanged };
 }
 
-async function saveTrustedPlayer(userId, player) {
-  const synced = await syncTodayAnsWithRateLimit(userId, player);
+function stableJson(v) {
+  if (v === null || typeof v !== "object") return JSON.stringify(v === undefined ? null : v);
+  if (Array.isArray(v)) return "[" + v.map(stableJson).join(",") + "]";
+  return "{" + Object.keys(v).filter((k) => v[k] !== undefined).sort().map((k) => JSON.stringify(k) + ":" + stableJson(v[k])).join(",") + "}";
+}
+
+async function saveTrustedPlayer(userId, player, opts = {}) {
+  const synced = opts.skipSync ? player : await syncTodayAnsWithRateLimit(userId, player);
   const updates = {};
   updates[`players/${userId}`]     = synced;
   updates[`leaderboard/${userId}`] = rankDataFor(synced);
@@ -628,7 +640,7 @@ function makeProblemForLevel(lv) {
 
 exports.loginPlayer = functions
   .region(REGION)
-  .runWith({ maxInstances: 1000, timeoutSeconds: 10, enforceAppCheck: true })
+  .runWith({ maxInstances: 1000, timeoutSeconds: 30, enforceAppCheck: true })
   .https.onCall(async (data) => {
     assertNotMaintenanceHours();
     const rawSchool = data?.school;
@@ -662,7 +674,7 @@ exports.loginPlayer = functions
 
 exports.savePlayer = functions
   .region(REGION)
-  .runWith({ maxInstances: 1000, timeoutSeconds: 10, enforceAppCheck: true })
+  .runWith({ maxInstances: 1000, timeoutSeconds: 30, enforceAppCheck: true })
   .https.onCall(async (data) => {
     const rawPlayer = data?.player;
     if (!rawPlayer || typeof rawPlayer !== "object") fail("저장할 데이터가 없습니다.");
@@ -689,11 +701,11 @@ exports.savePlayer = functions
 
 exports.getProblem = functions
   .region(REGION)
-  .runWith({ maxInstances: 1000, timeoutSeconds: 10, enforceAppCheck: true })
+  .runWith({ maxInstances: 1000, timeoutSeconds: 30, enforceAppCheck: true })
   .https.onCall(async (data) => {
     assertNotMaintenanceHours();
-    const { userId, player } = await resolvePlayerSession(data);
-    await saveTrustedPlayer(userId, player);
+    const { userId, player, unchanged } = await resolvePlayerSession(data);
+    if (!unchanged) await saveTrustedPlayer(userId, player);   // 날짜가 바뀌는 등 달라졌을 때만 저장
 
     const lv       = player.lv || 1;
     const problemRef = activeProblemRef(userId);
@@ -725,7 +737,7 @@ exports.getProblem = functions
 
 exports.submitAnswer = functions
   .region(REGION)
-  .runWith({ maxInstances: 1000, timeoutSeconds: 10, enforceAppCheck: true })
+  .runWith({ maxInstances: 1000, timeoutSeconds: 30, enforceAppCheck: true })
   .https.onCall(async (data, context) => {                    // ✅ context 추가
     const { userId, player } = await resolvePlayerSession(data);
 
@@ -809,7 +821,7 @@ exports.submitAnswer = functions
     await Promise.all([
       problemWritePromise,
       detectAnomalies(userId, isCorrect, elapsed, player.lv || 1), // ✅ 이상 탐지
-      saveTrustedPlayer(userId, player),
+      saveTrustedPlayer(userId, player, { skipSync: true }),
     ]);
     result.player = publicPlayer(player);
     return result;
@@ -875,7 +887,7 @@ exports.scheduledLeaderboard = functions
 
 exports.buyItem = functions
   .region(REGION)
-  .runWith({ maxInstances: 1000, timeoutSeconds: 10, enforceAppCheck: true })
+  .runWith({ maxInstances: 1000, timeoutSeconds: 30, enforceAppCheck: true })
   .https.onCall(async (data) => {
     assertNotMaintenanceHours();
     const { userId, player } = await resolvePlayerSession(data);
@@ -926,7 +938,7 @@ function makeRewardCode() {
 
 exports.getHiddenReward = functions
   .region(REGION)
-  .runWith({ maxInstances: 1000, timeoutSeconds: 10, enforceAppCheck: true })
+  .runWith({ maxInstances: 1000, timeoutSeconds: 30, enforceAppCheck: true })
   .https.onCall(async (data) => {
     assertNotMaintenanceHours();
     const { userId, player } = await resolvePlayerSession(data);
