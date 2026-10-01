@@ -486,15 +486,17 @@ async function applyAutoBlock(userId, reason) {
   });
 }
 
-// 시간 하한(HARD_FLOOR) 위반 기록. 10분 안에 반복되면 차단.
-async function recordFastReject(userId, elapsed) {
+// 시간 하한(HARD_FLOOR) 위반 기록. "너무 빠른데 정답"이 10분 안에 반복되면 차단.
+// 너무 빠른데 틀린 답(아이가 아무 숫자나 연타)은 거절만 하고 차단 횟수에는 세지 않는다 — 봇은 정답을 낸다.
+async function recordFastReject(userId, elapsed, correct = true) {
   try {
     const ref  = db.ref(`anomaly/${userId}`);
     const data = (await ref.get()).val() || {};
     const now  = Date.now();
-    const recentRejects = [...(data.fastRejectTimes || []), now].filter((t) => now - t < FAST_REJECT_WINDOW_MS).slice(-FAST_REJECT_BLOCK);
+    const recentRejects = [...(data.fastRejectTimes || []), ...(correct ? [now] : [])].filter((t) => now - t < FAST_REJECT_WINDOW_MS).slice(-FAST_REJECT_BLOCK);
     await ref.update({
       fastRejects: (data.fastRejects || 0) + 1,
+      fastWrongRejects: (data.fastWrongRejects || 0) + (correct ? 0 : 1),
       fastRejectTimes: recentRejects,
       lastFastReject: { at: now, elapsed },
     });
@@ -760,7 +762,7 @@ exports.submitAnswer = functions
     const elapsed   = (now - problem.createdAt) / 1000;
     if (elapsed < HARD_FLOOR_SEC) {
       // 사람이 읽고 입력할 수 없는 시간 → 답을 받지 않는다 (벌점 없음). 같은 문제를 다시 풀면 된다.
-      await recordFastReject(userId, elapsed);
+      await recordFastReject(userId, elapsed, Math.abs(userAnswer - problem.answer) < 0.001);
       fail("⚡ 너무 빨라요! 문제를 잘 읽고 다시 풀어 보세요.", "resource-exhausted");
     }
 
