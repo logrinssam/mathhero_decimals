@@ -880,10 +880,19 @@ async function buildAndSaveLeaderboard() {
   });
 }
 
+// 수업 시간(08:00~14:30)엔 10분마다, 그 밖엔 정각·30분에만 집계 (DB 내보내기 요금 절약)
+function shouldBuildLeaderboardNow() {
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const minOfDay = kst.getUTCHours() * 60 + kst.getUTCMinutes();
+  if (minOfDay >= 8 * 60 && minOfDay < 14 * 60 + 30) return true;
+  return Math.floor(kst.getUTCMinutes() / 10) % 3 === 0;
+}
+
 exports.scheduledLeaderboard = functions
-  .pubsub.schedule("every 10 minutes")
+  .pubsub.schedule("*/10 * * * *")
   .timeZone("Asia/Seoul")
   .onRun(async () => {
+    if (!shouldBuildLeaderboardNow()) return;
     await buildAndSaveLeaderboard();
   });
 
