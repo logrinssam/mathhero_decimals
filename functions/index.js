@@ -829,8 +829,8 @@ exports.submitAnswer = functions
     return result;
   });
 
-// ===== 리더보드 집계 + 30분 캐시 =====
-const LEADERBOARD_TTL_MS = 30 * 60 * 1000;
+// ===== 리더보드 집계 + 10분 캐시 =====
+const LEADERBOARD_TTL_MS = 10 * 60 * 1000;
 
 async function buildAndSaveLeaderboard() {
   const today = getToday();
@@ -881,7 +881,7 @@ async function buildAndSaveLeaderboard() {
 }
 
 exports.scheduledLeaderboard = functions
-  .pubsub.schedule("every 30 minutes")
+  .pubsub.schedule("every 10 minutes")
   .timeZone("Asia/Seoul")
   .onRun(async () => {
     await buildAndSaveLeaderboard();
