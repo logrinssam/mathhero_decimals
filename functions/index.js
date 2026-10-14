@@ -366,6 +366,10 @@ const HARD_FLOOR_SEC = 0.8;
 const SOFT_FLOOR_SEC = 2.0;
 const FAST_REJECT_BLOCK = 25;
 const FAST_REJECT_WINDOW_MS = 10 * 60 * 1000;
+// 이 레벨까지는 봇 탐지를 느슨하게: 의심 점수로는 자동 차단하지 않고(기록만), 시간 하한 위반 차단 횟수도 넉넉히.
+//  → 쉬운 문제를 빠르고 일정하게 푸는 잘하는 학생이 봇으로 오인되어 차단되는 일이 잦았다.
+const LENIENT_MAX_LV = 30;
+const FAST_REJECT_BLOCK_LENIENT = 60;
 const BLOCK_DURATIONS = [
   60  * 60 * 1000,                                   // 1차 위반: 1시간
   6   * 60 * 60 * 1000,                              // 2차 위반: 6시간
@@ -497,19 +501,20 @@ async function applyAutoBlock(userId, reason) {
 
 // 시간 하한(HARD_FLOOR) 위반 기록. "너무 빠른데 정답"이 10분 안에 반복되면 차단.
 // 너무 빠른데 틀린 답(아이가 아무 숫자나 연타)은 거절만 하고 차단 횟수에는 세지 않는다 — 봇은 정답을 낸다.
-async function recordFastReject(userId, elapsed, correct = true) {
+async function recordFastReject(userId, elapsed, correct = true, lv = 1) {
   try {
     const ref  = db.ref(`anomaly/${userId}`);
     const data = (await ref.get()).val() || {};
     const now  = Date.now();
-    const recentRejects = [...(data.fastRejectTimes || []), ...(correct ? [now] : [])].filter((t) => now - t < FAST_REJECT_WINDOW_MS).slice(-FAST_REJECT_BLOCK);
+    const blockAt = lv <= LENIENT_MAX_LV ? FAST_REJECT_BLOCK_LENIENT : FAST_REJECT_BLOCK;
+    const recentRejects = [...(data.fastRejectTimes || []), ...(correct ? [now] : [])].filter((t) => now - t < FAST_REJECT_WINDOW_MS).slice(-blockAt);
     await ref.update({
       fastRejects: (data.fastRejects || 0) + 1,
       fastWrongRejects: (data.fastWrongRejects || 0) + (correct ? 0 : 1),
       fastRejectTimes: recentRejects,
       lastFastReject: { at: now, elapsed },
     });
-    if (recentRejects.length >= FAST_REJECT_BLOCK) {
+    if (recentRejects.length >= blockAt) {
       await applyAutoBlock(userId, `10분 안에 시간 하한 위반 ${recentRejects.length}회`);
       await ref.update({ fastRejectTimes: [] });
     }
@@ -555,7 +560,8 @@ async function detectAnomalies(userId, isCorrect, elapsed, lv) {
     if (!fired) score = Math.max(0, score - 1);
     if (!isCorrect) score = Math.max(0, score - 2);
 
-    data.suspicionScore = Math.min(score, 20);
+    // LV30 이하는 점수를 10점까지만 쌓는다 → 기록은 남되, LV31이 되는 순간 바로 차단되는 일은 없다
+    data.suspicionScore = Math.min(score, lv <= LENIENT_MAX_LV ? 10 : 20);
     await ref.update(data);
 
     // 관리자 검토용 로그 (점수 10점 이상)
@@ -567,9 +573,9 @@ async function detectAnomalies(userId, isCorrect, elapsed, lv) {
       });
     }
 
-    // 자동 차단: 의심점수 15점 이상 + 150연속 정답 유지 중일 때만
-    // → 오답이 한 번이라도 나오면 연속정답이 풀리고 점수도 깎이므로 실제 학생은 걸리지 않는다
-    if (data.suspicionScore >= 15 && data.correctStreak > 150) {
+    // 자동 차단: LV31부터, 의심점수 15점 이상 + 150연속 정답 유지 중일 때만
+    // → LV30 이하는 기록만 한다 (쉬운 문제를 빠르고 일정하게 푸는 학생이 자꾸 걸렸다)
+    if (lv > LENIENT_MAX_LV && data.suspicionScore >= 15 && data.correctStreak > 150) {
       await applyAutoBlock(userId, `의심점수 ${data.suspicionScore}, 연속정답 ${data.correctStreak}`);
       await ref.update({ suspicionScore: 0 });
     }
@@ -771,7 +777,7 @@ exports.submitAnswer = functions
     const elapsed   = (now - problem.createdAt) / 1000;
     if (elapsed < HARD_FLOOR_SEC) {
       // 사람이 읽고 입력할 수 없는 시간 → 답을 받지 않는다 (벌점 없음). 같은 문제를 다시 풀면 된다.
-      await recordFastReject(userId, elapsed, Math.abs(userAnswer - problem.answer) < 0.001);
+      await recordFastReject(userId, elapsed, Math.abs(userAnswer - problem.answer) < 0.001, player.lv || 1);
       fail("⚡ 너무 빨라요! 문제를 잘 읽고 다시 풀어 보세요.", "resource-exhausted");
     }
 
