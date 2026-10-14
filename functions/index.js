@@ -11,6 +11,11 @@ admin.initializeApp({
 const db = admin.database();
 const REGION = "asia-northeast3";
 const MAX_LV = 2000;
+// 레벨업 필요 경험치 배율 (1 = 예전 그대로). 몬스터 1마리 = 경험치 20.
+const EXP_NEED_MULT = 0.85;
+function maxExpForLevel(lv) {
+  return Math.min(Math.max(1, Math.ceil((50 + lv * 5) * EXP_NEED_MULT)), 100000);
+}
 const BANNED_NICK_RE = /운영자|관리자|관리자환영|운영자환영|^gm$|^admin$|치트|hack/i;
 
 const ALLOWED_ATK = new Set([10, 15, 25, 55, 110, 300, 600, 1000, 1500]);
@@ -210,7 +215,7 @@ function defaultPlayer(school, nickname) {
     maxHp: 100,
     gold: 0,
     exp: 0,
-    maxExp: 50,
+    maxExp: maxExpForLevel(1),
     atk: 10,
     comboRate: 0,
     bonusTime: 5,
@@ -795,10 +800,11 @@ exports.submitAnswer = functions
         player.collection = sanitizeCollection(player.collection);
         player.collection[problem.monsterName] = Math.min(killedCount + 1, 100000);
 
-        if (player.exp >= player.maxExp && player.lv < MAX_LV) {
-          player.lv    = Math.min(player.lv + 1, MAX_LV);
-          player.exp   = 0;
-          player.maxExp = Math.min(50 + player.lv * 5, 100000);
+        // 남는 경험치는 버리지 않고 다음 레벨로 이월한다 (예전엔 0으로 초기화되어 매번 반 마리쯤 증발했다)
+        while (player.exp >= player.maxExp && player.lv < MAX_LV) {
+          player.exp   -= player.maxExp;
+          player.lv     = Math.min(player.lv + 1, MAX_LV);
+          player.maxExp = maxExpForLevel(player.lv);
           player.maxHp  = Math.min((player.maxHp || 100) + 20, 500000);
           player.hp     = player.maxHp;
           result.levelUp = true;
