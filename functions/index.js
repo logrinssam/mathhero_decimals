@@ -13,6 +13,10 @@ const REGION = "asia-northeast3";
 const MAX_LV = 2000;
 // 레벨업 필요 경험치 배율 (1 = 예전 그대로). 몬스터 1마리 = 경험치 20.
 const EXP_NEED_MULT = 0.85;
+// 몬스터 체력 배율 (1 = 예전 그대로). 다음 몬스터부터 적용된다.
+const MONSTER_HP_MULT = 0.7;
+// 처치 골드 배율 (1 = 예전 그대로, 기본 50G). 무기를 빨리 사서 한 마리당 문제 수가 줄어든다.
+const GOLD_MULT = 1.2;
 function maxExpForLevel(lv) {
   return Math.min(Math.max(1, Math.ceil((50 + lv * 5) * EXP_NEED_MULT)), 100000);
 }
@@ -630,7 +634,7 @@ function pickMonsterForLevel(lv) {
 function defaultMonsterForLevel(lv) {
   const safeLv = Math.max(1, Math.floor(Number(lv) || 1));
   const picked = pickMonsterForLevel(safeLv);
-  const maxHp = 36 + safeLv * 18 + Math.floor(safeLv * safeLv * 0.012);
+  const maxHp = Math.max(1, Math.floor((36 + safeLv * 18 + Math.floor(safeLv * safeLv * 0.012)) * MONSTER_HP_MULT));
   return { name: picked.name, hp: maxHp, maxHp };
 }
 
@@ -793,7 +797,7 @@ exports.submitAnswer = functions
       result.timeBonus   = timeBonus === 2;
 
       if (problem.monsterHp <= 0) {
-        const goldReward = Math.floor(50 * (killedCount >= 50 ? 1.1 : killedCount >= 10 ? 1.05 : 1));
+        const goldReward = Math.floor(50 * GOLD_MULT * (killedCount >= 50 ? 1.1 : killedCount >= 10 ? 1.05 : 1));
         const expReward  = Math.floor(20 * (1 + (player.expBonus || 0) / 100));
         player.gold      = Math.min((player.gold || 0) + goldReward, 1000000000);
         player.exp       = Math.min((player.exp  || 0) + expReward,  100000);
