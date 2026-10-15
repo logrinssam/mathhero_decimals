@@ -7,6 +7,10 @@
         ".read": true,
         ".write": false
       },
+      "cachedSchoolRank": {
+        ".read": true,
+        ".write": false
+      },
       "leaderboard": {
         ".read": false,
         ".write": false,
