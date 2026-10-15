@@ -881,7 +881,8 @@ const LEADERBOARD_TTL_MS = 10 * 60 * 1000;
 async function buildAndSaveLeaderboard() {
   const today = getToday();
   const [lbSnap, rlSnap] = await Promise.all([
-    db.ref("leaderboard").orderByChild("lv").limitToLast(1500).get(),
+    // 전체 명단을 읽는다 (상위 1500명만 읽으면 교내 순위에서 나머지 학생이 빠진다)
+    db.ref("leaderboard").get(),
     db.ref("rateLimit").get(),
   ]);
   const rateMap = rlSnap.val() || {};
