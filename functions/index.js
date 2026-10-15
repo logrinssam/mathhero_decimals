@@ -942,19 +942,12 @@ async function buildAndSaveLeaderboard() {
   ]);
 }
 
-// 수업 시간(08:00~14:30)엔 10분마다, 그 밖엔 정각·30분에만 집계 (DB 내보내기 요금 절약)
-function shouldBuildLeaderboardNow() {
-  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
-  const minOfDay = kst.getUTCHours() * 60 + kst.getUTCMinutes();
-  if (minOfDay >= 8 * 60 && minOfDay < 14 * 60 + 30) return true;
-  return Math.floor(kst.getUTCMinutes() / 10) % 3 === 0;
-}
-
+// 1학기는 하루 한 번, 매일 16:00 KST에만 집계한다 (2학기 운영 중이라 자주 갱신할 필요가 없고,
+// 전체 명단(약 2만 3천 명)을 읽는 DB 내보내기 요금을 아낀다). 정답왕(오전 8시 초기화)은 그날 16시까지 기록이 반영된다.
 exports.scheduledLeaderboard = functions
-  .pubsub.schedule("*/10 * * * *")
+  .pubsub.schedule("0 16 * * *")
   .timeZone("Asia/Seoul")
   .onRun(async () => {
-    if (!shouldBuildLeaderboardNow()) return;
     await buildAndSaveLeaderboard();
   });
 
