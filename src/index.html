@@ -54,9 +54,12 @@
         .tab-btn { flex: 1; min-width: 90px; padding: 12px 5px; border: none; border-radius: 12px; font-family: 'Jua'; cursor: pointer; background: #eee; font-size: 1em; transition: 0.2s; }
         .tab-btn.active { background: var(--p); color: #1565c0; font-weight: bold; border: 2px solid #64b5f6; }
         
-        #shop-list, #collection-grid, #rank-list, #school-rank-list, #daily-rank-list { display: grid; grid-template-columns: 1fr; gap: 12px; max-height: 450px; overflow-y: auto; padding-right: 8px; }
+        #shop-list, #collection-grid, #rank-list, #school-rank-list, #daily-rank-list, #myschool-rank-list { display: grid; grid-template-columns: 1fr; gap: 12px; max-height: 450px; overflow-y: auto; padding-right: 8px; }
         #collection-grid { grid-template-columns: 1fr 1fr; }
         .card { border: 3px solid var(--p); padding: 15px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; background: #fdfdfd; font-size: 1.1em; }
+        .card.me { border-color: var(--a); background: #fff3e0; }
+        .me-badge { background: var(--a); color: #fff; font-size: 0.7em; padding: 2px 8px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
+        .rank-summary { text-align: center; margin: 0; padding: 12px; background: #fff9c4; border: 3px dashed #fff176; border-radius: 15px; font-size: 1.1em; }
         .tag { font-size: 0.8em; font-weight: bold; padding: 3px 8px; border-radius: 10px; margin-bottom: 5px; display: inline-block; }
         .tag-w { background: #ffebee; color: #d32f2f; } .tag-a { background: #f3e5f5; color: #7e57c2; } .tag-x { background: #e8f5e9; color: #2e7d32; } .tag-e { background: #fff9c4; color: #f57f17; }
         
@@ -143,11 +146,13 @@
                 <button class="tab-btn active" id="tab-personal" onclick="switchRankTab('personal')">👤 개인 TOP 50</button>
                 <button class="tab-btn" id="tab-daily" onclick="switchRankTab('daily')">🔥 정답왕 TOP 10</button>
                 <button class="tab-btn" id="tab-school" onclick="switchRankTab('school')">🏫 학교 연합</button>
+                <button class="tab-btn" id="tab-myschool" onclick="switchRankTab('myschool')">🎒 우리 학교</button>
             </div>
             <div id="rank-list"></div>
             <p id="daily-rank-reset-note" class="hidden" style="text-align:center; color:#888; font-size:0.95em; margin:0 0 12px;">⏰ 오전 8시에 초기화됩니다</p>
             <div id="daily-rank-list" class="hidden"></div>
             <div id="school-rank-list" class="hidden"></div>
+            <div id="myschool-rank-list" class="hidden"></div>
             <button class="action-btn btn-nav" style="background:#78909c;" onclick="showScreen('battle')">🔙 돌아가기</button>
         </div>
 
@@ -620,23 +625,71 @@ window.showScreen = function(screenName) {
     if(screenName === 'collection') renderCollection();
 };
 
+const RANK_TABS = { personal: 'rank-list', daily: 'daily-rank-list', school: 'school-rank-list', myschool: 'myschool-rank-list' };
+
+// 서버(rankDataFor)와 같은 규칙: 비밀 모드 닉네임은 첫 글자·끝 글자만 보인다
+function maskNickname(nickname) {
+    const n = String(nickname || "");
+    if (n.length <= 2) return n.length ? `${n[0]}★` : "★";
+    return `${n[0]}${"★".repeat(n.length - 2)}${n[n.length - 1]}`;
+}
+
+// 교내 순위에서 "내 줄"을 찾는 태그: 서버와 같은 sha256(학교-닉네임) 앞 8자리
+async function myRankTag() {
+    const p = gameState.player;
+    if (!p.school || !p.nickname || !window.crypto?.subtle) return "";
+    try {
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${p.school}-${p.nickname}`));
+        return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 8);
+    } catch { return ""; }
+}
+
+async function renderMySchoolRank(targetEl) {
+    const me = gameState.player;
+    if (!gameState.isLoggedIn || !me.school) {
+        targetEl.innerHTML = "<p style='text-align:center;'>모험을 시작하면 우리 학교 순위를 볼 수 있어요!</p>";
+        return;
+    }
+    try {
+        const [snap, tag] = await Promise.all([get(ref(db, 'cachedSchoolRank/' + me.school)), myRankTag()]);
+        const data = snap.val();
+        const members = Array.isArray(data?.members) ? data.members : [];
+        if (!members.length) {
+            targetEl.innerHTML = "<p style='text-align:center;'>아직 우리 학교 순위가 집계되지 않았어요. 다음 집계 때 다시 확인해 주세요.</p>";
+            return;
+        }
+        const myDisplay = me.isSecret === false ? me.nickname : maskNickname(me.nickname);
+        let myIdx = tag ? members.findIndex(m => m.tag === tag) : -1;
+        if (myIdx < 0) myIdx = members.findIndex(m => m.nickname === myDisplay);
+
+        const summary = myIdx >= 0
+            ? `🎒 ${escapeHtml(me.school)} 용사 ${members.length}명 중 <b style="color:var(--a);">${members[myIdx].rank}등</b>!`
+            : `🎒 ${escapeHtml(me.school)} 용사 ${members.length}명 · 내 순위는 다음 집계 때 올라와요`;
+
+        targetEl.innerHTML = `<p class="rank-summary">${summary}</p>` + members.map((m, i) =>
+            `<div class="card${i === myIdx ? ' me' : ''}"><span><b>${m.rank}등</b>. ${escapeHtml(m.nickname || '')}${i === myIdx ? '<span class="me-badge">나</span>' : ''}</span><b style="color:var(--a);">LV.${m.lv}</b></div>`
+        ).join('');
+
+        const meEl = targetEl.querySelector('.card.me');
+        if (meEl) targetEl.scrollTop = Math.max(0, meEl.offsetTop - targetEl.offsetTop - 120);
+    } catch(e) {
+        console.error(e);
+        targetEl.innerHTML = "<p style='text-align:center;'>⚠️ 우리 학교 순위를 불러오지 못했습니다.</p>";
+    }
+}
+
 window.switchRankTab = async function(tabName) {
-    document.getElementById('tab-personal').classList.toggle('active', tabName === 'personal');
-    document.getElementById('tab-daily').classList.toggle('active', tabName === 'daily');
-    document.getElementById('tab-school').classList.toggle('active', tabName === 'school');
-
-    document.getElementById('rank-list').classList.toggle('hidden', tabName !== 'personal');
+    if (!RANK_TABS[tabName]) tabName = 'personal';
+    for (const [name, listId] of Object.entries(RANK_TABS)) {
+        document.getElementById('tab-' + name).classList.toggle('active', tabName === name);
+        document.getElementById(listId).classList.toggle('hidden', tabName !== name);
+    }
     document.getElementById('daily-rank-reset-note').classList.toggle('hidden', tabName !== 'daily');
-    document.getElementById('daily-rank-list').classList.toggle('hidden', tabName !== 'daily');
-    document.getElementById('school-rank-list').classList.toggle('hidden', tabName !== 'school');
 
-    const targetEl = tabName === 'personal'
-        ? document.getElementById('rank-list')
-        : tabName === 'daily'
-            ? document.getElementById('daily-rank-list')
-            : document.getElementById('school-rank-list');
-
+    const targetEl = document.getElementById(RANK_TABS[tabName]);
     targetEl.innerHTML = "<p>로딩 중...</p>";
+
+    if (tabName === 'myschool') return renderMySchoolRank(targetEl);
 
     try {
         const snap = await get(ref(db, 'cachedLeaderboard'));

@@ -1,8 +1,9 @@
 /**
- * cachedLeaderboard 즉시 재집계 (정답왕 TOP10 반영)
+ * cachedLeaderboard + cachedSchoolRank(교내 순위) 즉시 재집계 (정답왕 TOP10 반영)
  *   node scripts/rebuild-cached-leaderboard.mjs
  */
 import { readFileSync, existsSync } from "fs";
+import crypto from "crypto";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -42,6 +43,36 @@ initializeApp({
   credential: cert(JSON.parse(readFileSync(keyPath, "utf8"))),
   databaseURL: DATABASE_URL,
 });
+
+// ===== 교내 순위 (학교별 용사 목록) =====
+// 내 줄을 찾기 위한 짧은 식별 태그: 닉네임을 드러내지 않도록 uid(학교-닉네임)의 해시 앞 8자리만 쓴다
+function schoolRankTag(uid) {
+  return crypto.createHash("sha256").update(String(uid)).digest("hex").slice(0, 8);
+}
+
+// 학교별로 묶어 레벨순 정렬. 같은 레벨은 공동 순위(1, 2, 2, 4). 입력은 leaderboard 항목(uid 포함).
+// 결과는 cachedSchoolRank/{학교명} 아래에 저장되고, 클라이언트는 자기 학교 것만 읽는다.
+function buildSchoolRank(all) {
+  const bySchool = {};
+  for (const p of all) {
+    const name = String(p.school || "");
+    if (!name || /[.#$\[\]/\\]/.test(name)) continue; // DB 키로 쓸 수 없는 이름은 건너뛴다
+    if (!bySchool[name]) bySchool[name] = [];
+    bySchool[name].push({ tag: schoolRankTag(p.uid), nickname: p.nickname || "", lv: p.lv || 1 });
+  }
+  const out = {};
+  const now = Date.now();
+  for (const [name, list] of Object.entries(bySchool)) {
+    list.sort((a, b) => b.lv - a.lv || a.nickname.localeCompare(b.nickname, "ko"));
+    let rank = 0;
+    const members = list.map((m, i) => {
+      if (i === 0 || m.lv !== list[i - 1].lv) rank = i + 1;
+      return { ...m, rank };
+    });
+    out[name] = { members, count: members.length, updatedAt: now };
+  }
+  return out;
+}
 
 const db = getDatabase();
 const today = getToday();
@@ -88,13 +119,19 @@ const school = Object.entries(schoolMap)
   .slice(0, 30)
   .map(([name, totalLv]) => ({ school: name, totalLv }));
 
-await db.ref("cachedLeaderboard").set({
-  personal,
-  daily,
-  school,
-  updatedAt: Date.now(),
-});
+const schoolRank = buildSchoolRank(all);
 
-console.log("✅ cachedLeaderboard 재집계 완료");
+await Promise.all([
+  db.ref("cachedLeaderboard").set({
+    personal,
+    daily,
+    school,
+    updatedAt: Date.now(),
+  }),
+  db.ref("cachedSchoolRank").set(schoolRank),
+]);
+
+console.log("✅ cachedLeaderboard / cachedSchoolRank 재집계 완료");
+console.log("   교내 순위 학교 수:", Object.keys(schoolRank).length);
 console.log("   오늘:", today);
 console.log("   정답왕 TOP:", daily.map((p, i) => `${i + 1}. ${p.nickname} ${p.todayAns}`).join(", ") || "(없음)");

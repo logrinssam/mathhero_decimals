@@ -845,6 +845,36 @@ exports.submitAnswer = functions
     return result;
   });
 
+// ===== 교내 순위 (학교별 용사 목록) =====
+// 내 줄을 찾기 위한 짧은 식별 태그: 닉네임을 드러내지 않도록 uid(학교-닉네임)의 해시 앞 8자리만 쓴다
+function schoolRankTag(uid) {
+  return crypto.createHash("sha256").update(String(uid)).digest("hex").slice(0, 8);
+}
+
+// 학교별로 묶어 레벨순 정렬. 같은 레벨은 공동 순위(1, 2, 2, 4). 입력은 leaderboard 항목(uid 포함).
+// 결과는 cachedSchoolRank/{학교명} 아래에 저장되고, 클라이언트는 자기 학교 것만 읽는다.
+function buildSchoolRank(all) {
+  const bySchool = {};
+  for (const p of all) {
+    const name = String(p.school || "");
+    if (!name || /[.#$\[\]/\\]/.test(name)) continue; // DB 키로 쓸 수 없는 이름은 건너뛴다
+    if (!bySchool[name]) bySchool[name] = [];
+    bySchool[name].push({ tag: schoolRankTag(p.uid), nickname: p.nickname || "", lv: p.lv || 1 });
+  }
+  const out = {};
+  const now = Date.now();
+  for (const [name, list] of Object.entries(bySchool)) {
+    list.sort((a, b) => b.lv - a.lv || a.nickname.localeCompare(b.nickname, "ko"));
+    let rank = 0;
+    const members = list.map((m, i) => {
+      if (i === 0 || m.lv !== list[i - 1].lv) rank = i + 1;
+      return { ...m, rank };
+    });
+    out[name] = { members, count: members.length, updatedAt: now };
+  }
+  return out;
+}
+
 // ===== 리더보드 집계 + 10분 캐시 =====
 const LEADERBOARD_TTL_MS = 10 * 60 * 1000;
 
@@ -890,10 +920,16 @@ async function buildAndSaveLeaderboard() {
     .slice(0, 30)
     .map(([name, totalLv]) => ({ school: name, totalLv }));
 
-  await db.ref("cachedLeaderboard").set({
-    personal, daily, school,
-    updatedAt: Date.now(),
-  });
+  // 교내 순위 (우리 학교 탭)
+  const schoolRank = buildSchoolRank(all);
+
+  await Promise.all([
+    db.ref("cachedLeaderboard").set({
+      personal, daily, school,
+      updatedAt: Date.now(),
+    }),
+    db.ref("cachedSchoolRank").set(schoolRank),
+  ]);
 }
 
 // 수업 시간(08:00~14:30)엔 10분마다, 그 밖엔 정각·30분에만 집계 (DB 내보내기 요금 절약)
