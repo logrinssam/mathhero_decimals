@@ -416,7 +416,7 @@ async function generateProblem() {
         });
         const data = result.data;
         if (!data?.question) throw new Error("문제 데이터 없음");
-        gameState.currentProblem = { q: data.question, start: Date.now() };
+        gameState.currentProblem = { q: data.question, id: data.problemId || "", start: Date.now() };
 
         const mon = data.monster || {};
         const monsterName = mon.name || monsterData[0]?.name || "소수점 슬라임";
@@ -481,7 +481,8 @@ async function submitAttack() {
             school: gameState.player.school,
             nickname: gameState.player.nickname,
             password: gameState.loginPassword,
-            answer: rawValue
+            answer: rawValue,
+            problemId: gameState.currentProblem.id || null   // 서버가 "지금 화면의 문제"를 채점하도록
         });
         const data = result.data;
         
@@ -518,6 +519,10 @@ async function submitAttack() {
             logMessage(msg || "잠깐만 천천히 눌러 주세요.");
             updateUI();
             return;                        // 쓴 답은 그대로 두고, 잠시 뒤 다시 누르면 된다
+        } else if(e.code === 'functions/failed-precondition' && msg.includes("문제가 바뀌")) {
+            // 서버의 활성 문제가 화면의 문제와 달랐다 (다른 탭·기기에서 같은 계정 사용 등) → 오답 처리 없이 새 문제
+            logMessage("📶 문제가 바뀌어 새 문제를 받아요");
+            await generateProblem();
         } else if(e.code === 'functions/not-found' && msg.includes("문제")) {
             await generateProblem();
         } else {

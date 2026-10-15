@@ -741,7 +741,10 @@ exports.getProblem = functions
     if (!monster?.name) monster = defaultMonsterForLevel(lv);
 
     const problem = makeProblemForLevel(lv);
+    // 화면에 보이는 문제와 서버가 채점할 문제가 같은지 확인하는 토큰 (같은 계정 동시 접속·재시도 경합 방지)
+    const problemId = crypto.randomBytes(6).toString("hex");
     await problemRef.set({
+      problemId,
       answer:       problem.answer,
       createdAt:    Date.now(),
       monsterName:  monster.name,
@@ -749,7 +752,7 @@ exports.getProblem = functions
       monsterMaxHp: monster.maxHp,
     });
 
-    return { question: problem.question, monster, player: publicPlayer(player) };
+    return { problemId, question: problem.question, monster, player: publicPlayer(player) };
   });
 
 exports.submitAnswer = functions
@@ -773,6 +776,12 @@ exports.submitAnswer = functions
     const problem = (await problemSnapPromise).val();
     // 한 문제에는 한 번만 답할 수 있다 (오답에서 받은 정답을 같은 문제에 다시 내는 것 방지)
     if (!problem || problem.answered) fail("문제를 먼저 받아 주세요.", "not-found");
+    // 클라이언트가 답한 문제와 서버의 활성 문제가 다르면(같은 계정을 두 탭·두 기기에서 열었거나 재시도 경합)
+    // 채점하지 않고 거절한다 → HP 감점·콤보 초기화 없음. problemId 를 안 보내는 옛 클라이언트는 그대로 통과(배포 전환기 호환).
+    const clientProblemId = data?.problemId == null ? "" : String(data.problemId).slice(0, 32);
+    if (clientProblemId && problem.problemId && clientProblemId !== problem.problemId) {
+      fail("문제가 바뀌었어요. 새 문제를 받을게요!", "failed-precondition");
+    }
 
     const elapsed   = (now - problem.createdAt) / 1000;
     if (elapsed < HARD_FLOOR_SEC) {
