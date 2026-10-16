@@ -609,6 +609,7 @@ async function resolvePlayerSession(data) {
     : await findExistingPlayer(rawSchool || school, nickname, userId);
   const existing  = found.player;
   if (!existing) fail("플레이어를 찾을 수 없습니다.", "not-found");
+  assertNotBlocked(existing);
   const checkedPw = await checkPasswordGuarded(existing, found.userId, data?.password, { userId, val: lockSnap.val() });
   await enforceBannedSchoolGrace(existing, found.userId, null);
   const player    = sanitizePlayer(existing, existing, school, nickname);
@@ -637,6 +638,11 @@ async function deletePlayerData(userId) {
 
 // 금칙어 학교 이름인 기존 계정: 처음 걸린 시각(schoolNoticeAt)을 기록하고, 24시간이 지나면 삭제한다.
 // 반환값은 로그인 응답에 실어 보낼 안내 문구 (해당 없으면 null).
+// 선생님이 DB에서 players/<uid>/blocked = true 로 표시한 계정은 접속을 막는다 (배포 없이 켜고 끌 수 있다)
+function assertNotBlocked(existing) {
+  if (existing?.blocked) fail("⛔ 선생님이 잠시 막아 둔 계정입니다. 선생님께 문의하세요.", "permission-denied");
+}
+
 async function enforceBannedSchoolGrace(existing, storedUserId, player) {
   if (!existing || !isBannedSchool(existing.school)) return null;
   const noticeAt = Number(existing.schoolNoticeAt) || 0;
@@ -707,6 +713,7 @@ exports.loginPlayer = functions
     let isNew = false;
     let notice = null;
     if (existing) {
+      assertNotBlocked(existing);
       player = sanitizePlayer(existing, existing, school, nickname);
       notice = await enforceBannedSchoolGrace(existing, found.userId, player);
     } else {
