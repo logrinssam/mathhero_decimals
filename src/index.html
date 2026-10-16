@@ -323,6 +323,7 @@ window.processLogin = async function() {
             alert(`✅ 반갑습니다, ${gameState.player.nickname} 용사님!`);
         }
         if(result.data.locked && pw) alert("🔒 비밀번호 보호가 적용되었습니다.");
+        if(result.data.notice) alert(result.data.notice);   // 쓸 수 없는 학교 이름 경고 (24시간 뒤 삭제)
         
         gameState.isLoggedIn = true;
         document.getElementById('game-container').classList.remove('is-locked');

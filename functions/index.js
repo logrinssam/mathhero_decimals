@@ -21,6 +21,13 @@ function maxExpForLevel(lv) {
   return Math.min(Math.max(1, Math.ceil((50 + lv * 5) * EXP_NEED_MULT)), 100000);
 }
 const BANNED_NICK_RE = /운영자|관리자|관리자환영|운영자환영|^gm$|^admin$|치트|hack/i;
+// 학교 이름에 쓸 수 없는 말 (선생님 사칭·장난 학교 방지). 새 계정은 만들 수 없고,
+// 이미 있는 계정은 로그인 때 경고를 받으며 24시간 안에 바꾸지 않으면 다음 접속 때 삭제된다.
+const BANNED_SCHOOL_RE = /쌤|선생|로그린/i;
+const SCHOOL_RENAME_GRACE_MS = 24 * 60 * 60 * 1000;
+function isBannedSchool(school) {
+  return BANNED_SCHOOL_RE.test(String(school || ""));
+}
 
 const ALLOWED_ATK = new Set([10, 15, 25, 55, 110, 300, 600, 1000, 1500]);
 const ALLOWED_COMBO = new Set([0, 3, 7, 12, 22, 40, 60, 85, 120]);
@@ -603,6 +610,7 @@ async function resolvePlayerSession(data) {
   const existing  = found.player;
   if (!existing) fail("플레이어를 찾을 수 없습니다.", "not-found");
   const checkedPw = await checkPasswordGuarded(existing, found.userId, data?.password, { userId, val: lockSnap.val() });
+  await enforceBannedSchoolGrace(existing, found.userId, null);
   const player    = sanitizePlayer(existing, existing, school, nickname);
   if (existing.pwHash || existing.pw || checkedPw) {
     player.pwHash = passwordHash(userId, checkedPw);
@@ -616,6 +624,32 @@ function stableJson(v) {
   if (v === null || typeof v !== "object") return JSON.stringify(v === undefined ? null : v);
   if (Array.isArray(v)) return "[" + v.map(stableJson).join(",") + "]";
   return "{" + Object.keys(v).filter((k) => v[k] !== undefined).sort().map((k) => JSON.stringify(k) + ":" + stableJson(v[k])).join(",") + "}";
+}
+
+// 계정 데이터 전부 삭제 (플레이어·순위·진행 중 문제·일일 횟수)
+async function deletePlayerData(userId) {
+  const updates = {};
+  for (const node of ["players", "leaderboard", "activeProblems", "rateLimit"]) {
+    updates[`${node}/${userId}`] = null;
+  }
+  await db.ref().update(updates);
+}
+
+// 금칙어 학교 이름인 기존 계정: 처음 걸린 시각(schoolNoticeAt)을 기록하고, 24시간이 지나면 삭제한다.
+// 반환값은 로그인 응답에 실어 보낼 안내 문구 (해당 없으면 null).
+async function enforceBannedSchoolGrace(existing, storedUserId, player) {
+  if (!existing || !isBannedSchool(existing.school)) return null;
+  const noticeAt = Number(existing.schoolNoticeAt) || 0;
+  const now = Date.now();
+  if (noticeAt && now - noticeAt > SCHOOL_RENAME_GRACE_MS) {
+    await deletePlayerData(storedUserId);
+    fail("⛔ 학교 이름을 바꾸지 않아 이 계정은 삭제되었습니다.\n실제 학교 이름과 닉네임으로 새로 시작해 주세요.", "permission-denied");
+  }
+  if (player) player.schoolNoticeAt = noticeAt || now;
+  const hoursLeft = Math.max(1, Math.ceil(((noticeAt || now) + SCHOOL_RENAME_GRACE_MS - now) / 3600000));
+  return `⚠️ 학교 이름 "${existing.school}"은(는) 쓸 수 없는 이름이에요.\n` +
+    `실제 학교 이름과 다른 닉네임으로 다시 접속해 주세요.\n` +
+    `${hoursLeft}시간 안에 바꾸지 않으면 이 계정은 삭제됩니다.`;
 }
 
 async function saveTrustedPlayer(userId, player, opts = {}) {
@@ -671,9 +705,14 @@ exports.loginPlayer = functions
 
     let player;
     let isNew = false;
+    let notice = null;
     if (existing) {
       player = sanitizePlayer(existing, existing, school, nickname);
+      notice = await enforceBannedSchoolGrace(existing, found.userId, player);
     } else {
+      if (isBannedSchool(school)) {
+        fail("⚠️ 학교 이름에는 '쌤', '선생', 선생님 이름을 넣을 수 없어요.\n실제 학교 이름을 입력해 주세요.");
+      }
       if (findBannedWord(nickname) || findBannedWord(school)) {
         fail("😥 욕설이나 나쁜 말이 들어간 닉네임은 쓸 수 없어요. 다른 닉네임으로 정해 주세요.");
       }
@@ -686,7 +725,7 @@ exports.loginPlayer = functions
     await saveTrustedPlayer(userId, player);
     player = (await db.ref(`players/${userId}`).get()).val();
 
-    return { player: publicPlayer(player), isNew, locked: Boolean(player.pwHash) };
+    return { player: publicPlayer(player), isNew, locked: Boolean(player.pwHash), notice };
   });
 
 exports.savePlayer = functions
